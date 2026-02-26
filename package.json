@@ -10,7 +10,18 @@
     "build:server": "pnpm -C packages/server build",
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
-    "type-check": "pnpm -r type-check"
+    "type-check": "pnpm -r type-check",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:stop": "docker-compose stop",
+    "docker:restart": "docker-compose restart",
+    "docker:logs": "docker-compose logs -f",
+    "docker:logs:mysql": "docker-compose logs -f mysql",
+    "docker:logs:redis": "docker-compose logs -f redis",
+    "docker:ps": "docker-compose ps",
+    "docker:reset": "docker-compose down -v && docker-compose up -d",
+    "docker:mysql": "docker exec -it tally-pro-mysql mysql -uroot -ptally_pro_root tally_pro",
+    "docker:redis": "docker exec -it tally-pro-redis redis-cli"
   },
   "engines": {
     "node": ">=18",
