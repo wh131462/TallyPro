@@ -1,0 +1,334 @@
+<template>
+  <view class="skus-page">
+    <scroll-view scroll-y class="sku-scroll">
+      <view v-if="skus.length === 0" class="empty-state">
+        <image src="/static/icons/package.svg" class="empty-icon" />
+        <text class="empty-text">暂无产品，点击下方按钮添加</text>
+      </view>
+
+      <view
+        v-for="sku in skus"
+        :key="sku.id"
+        class="sku-card"
+        :class="{ 'sku-disabled': !sku.enabled }"
+        @tap="onSkuTap(sku)"
+      >
+        <view class="sku-icon-wrap" :style="{ background: sku.iconBg }">
+          <image :src="sku.icon" class="sku-icon" />
+        </view>
+        <view class="sku-content">
+          <view class="sku-header">
+            <text class="sku-name">{{ sku.name }}</text>
+            <view class="sku-badge" :class="sku.enabled ? 'badge-active' : 'badge-disabled'">
+              <text class="sku-badge-text">{{ sku.enabled ? '启用中' : '已停用' }}</text>
+            </view>
+          </view>
+          <view class="sku-stats">
+            <view class="sku-stat">
+              <text class="stat-label">工序</text>
+              <text class="stat-value">{{ sku.stepCount }}</text>
+            </view>
+            <view class="stat-divider"></view>
+            <view class="sku-stat">
+              <text class="stat-label">本月产量</text>
+              <text class="stat-value">{{ sku.monthVolume }}</text>
+            </view>
+          </view>
+        </view>
+        <image src="/static/icons/arrow-right.svg" class="arrow-icon" />
+      </view>
+
+      <view style="height: 160rpx;"></view>
+    </scroll-view>
+
+    <!-- Add SKU Button -->
+    <view class="bottom-bar safe-bottom">
+      <button class="btn-add" @tap="addSku">
+        <image src="/static/icons/plus.svg" class="btn-add-icon" />
+        <text class="btn-add-text">添加产品</text>
+      </button>
+    </view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { api } from '../../../utils/request';
+import { getCurrentWorkshop } from '../../../utils/storage';
+
+interface Sku {
+  id: number;
+  name: string;
+  icon: string;
+  iconBg: string;
+  stepCount: number;
+  monthVolume: number;
+  enabled: boolean;
+}
+
+const workshop = getCurrentWorkshop();
+const skus = ref<Sku[]>([]);
+
+const skuIcons: { icon: string; bg: string }[] = [
+  { icon: '/static/icons/shirt.svg', bg: '#EBF2F8' },
+  { icon: '/static/icons/trousers.svg', bg: '#E8F2EC' },
+  { icon: '/static/icons/dress.svg', bg: '#F4EEF6' },
+  { icon: '/static/icons/package.svg', bg: '#FFF0E8' },
+];
+
+function getSkuIcon(index: number) {
+  return skuIcons[index % skuIcons.length];
+}
+
+function onSkuTap(sku: Sku) {
+  uni.navigateTo({
+    url: `/pages/admin/sku-edit/index?skuId=${sku.id}&skuName=${encodeURIComponent(sku.name)}`,
+  });
+}
+
+function addSku() {
+  uni.showModal({
+    title: '添加产品',
+    placeholderText: '请输入产品名称',
+    editable: true,
+    success: async (res) => {
+      if (res.confirm && res.content) {
+        const name = res.content.trim();
+        if (!name) {
+          uni.showToast({ title: '请输入产品名称', icon: 'none' });
+          return;
+        }
+        try {
+          const result = await api.post<any>(`/workshops/${workshop!.id}/skus`, { name } as any);
+          uni.showToast({ title: '添加成功', icon: 'success' });
+          // Navigate to edit page for the new SKU
+          if (result.data?.id) {
+            uni.navigateTo({
+              url: `/pages/admin/sku-edit/index?skuId=${result.data.id}&skuName=${encodeURIComponent(name)}`,
+            });
+          } else {
+            loadSkus();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    },
+  });
+}
+
+async function loadSkus() {
+  if (!workshop) return;
+  try {
+    const res = await api.get<any>(`/workshops/${workshop.id}/skus`);
+    const list = res.data || [];
+    skus.value = (Array.isArray(list) ? list : []).map((s: any, i: number) => {
+      const iconInfo = getSkuIcon(i);
+      return {
+        id: s.id,
+        name: s.name || '未命名产品',
+        icon: iconInfo.icon,
+        iconBg: iconInfo.bg,
+        stepCount: s.steps?.length || s.step_count || 0,
+        monthVolume: s.month_volume || 0,
+        enabled: s.is_active !== false,
+      };
+    });
+  } catch (e) {
+    console.error('加载产品列表失败', e);
+  }
+}
+
+onMounted(() => {
+  loadSkus();
+});
+</script>
+
+<style lang="scss" scoped>
+@use '../../../static/styles/theme.scss' as *;
+
+.skus-page {
+  min-height: 100vh;
+  background: $cream;
+  display: flex;
+  flex-direction: column;
+}
+
+.sku-scroll {
+  flex: 1;
+  padding: 24rpx 28rpx;
+}
+
+.sku-card {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 28rpx 24rpx;
+  background: $surface;
+  border-radius: $radius-md;
+  margin-bottom: 16rpx;
+  box-shadow: $shadow-sm;
+  transition: opacity 0.2s;
+}
+
+.sku-disabled {
+  opacity: 0.6;
+}
+
+.sku-icon-wrap {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sku-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.sku-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.sku-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.sku-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: $ink;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sku-badge {
+  padding: 4rpx 14rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+}
+
+.badge-active {
+  background: $sage-light;
+}
+
+.badge-active .sku-badge-text {
+  color: $sage;
+}
+
+.badge-disabled {
+  background: $cream-deep;
+}
+
+.badge-disabled .sku-badge-text {
+  color: $ink-faint;
+}
+
+.sku-badge-text {
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.sku-stats {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.sku-stat {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: $ink-faint;
+}
+
+.stat-value {
+  font-size: 24rpx;
+  color: $ink-muted;
+  font-weight: 600;
+}
+
+.stat-divider {
+  width: 2rpx;
+  height: 24rpx;
+  background: $cream-deep;
+}
+
+.arrow-icon {
+  width: 32rpx;
+  height: 32rpx;
+  opacity: 0.3;
+  flex-shrink: 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 160rpx 0;
+}
+
+.empty-icon {
+  width: 128rpx;
+  height: 128rpx;
+  opacity: 0.2;
+  margin-bottom: 24rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: $ink-faint;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 28rpx;
+  background: $surface;
+  box-shadow: 0 -4rpx 16rpx rgba(30, 30, 42, 0.06);
+}
+
+.btn-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  width: 100%;
+  height: 92rpx;
+  background: $ink;
+  border-radius: $radius-lg;
+  border: none;
+}
+
+.btn-add::after {
+  display: none;
+}
+
+.btn-add-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.btn-add-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 1rpx;
+}
+</style>
