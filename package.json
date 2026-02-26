@@ -1,0 +1,19 @@
+{
+  "name": "tally-pro",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev:app": "pnpm -C packages/app dev:mp-weixin",
+    "dev:h5": "pnpm -C packages/app dev:h5",
+    "dev:server": "pnpm -C packages/server dev",
+    "build:app": "pnpm -C packages/app build:mp-weixin",
+    "build:server": "pnpm -C packages/server build",
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "type-check": "pnpm -r type-check"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  }
+}
