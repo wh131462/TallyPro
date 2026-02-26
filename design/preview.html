@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>计工宝 TallyPro - 设计稿预览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ==================== Design Tokens ==================== */
+:root {
+  --ink: #1E1E2A;
+  --ink-soft: #3A3A4A;
+  --ink-muted: #6E6E80;
+  --ink-faint: #A0A0B0;
+  --cream: #FAF8F4;
+  --cream-warm: #F5F0E8;
+  --cream-deep: #EDE6DA;
+  --surface: #FFFFFF;
+  --amber: #C8956C;
+  --amber-light: #D4A574;
+  --amber-deep: #B07D56;
+  --amber-glow: rgba(200,149,108,0.12);
+  --amber-surface: #FDF6F0;
+  --sage: #6B9B7B;
+  --sage-light: #E8F2EC;
+  --coral: #D4845A;
+  --coral-light: #FFF0E8;
+  --plum: #8B6B96;
+  --plum-light: #F4EEF6;
+  --sky: #5B8DB8;
+  --sky-light: #EBF2F8;
+  --danger: #C75B5B;
+  --danger-light: #FDEEEE;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 1px 3px rgba(30,30,42,0.04), 0 1px 2px rgba(30,30,42,0.02);
+  --shadow-md: 0 4px 16px rgba(30,30,42,0.06), 0 1px 3px rgba(30,30,42,0.04);
+  --shadow-lg: 0 12px 40px rgba(30,30,42,0.08), 0 2px 8px rgba(30,30,42,0.04);
+  --shadow-glow: 0 4px 24px rgba(200,149,108,0.2);
+  --font-display: 'Noto Serif SC', 'Songti SC', Georgia, serif;
+  --font-body: 'DM Sans', 'PingFang SC', -apple-system, sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ==================== Reset & Base ==================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(200,149,108,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(91,141,184,0.04) 0%, transparent 50%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 32px 20px;
+  color: var(--ink);
+}
+
+/* ==================== Phone Frame ==================== */
+.phone-frame {
+  width: 375px;
+  height: 812px;
+  background: var(--surface);
+  border-radius: 44px;
+  box-shadow:
+    0 0 0 1px rgba(30,30,42,0.08),
+    0 20px 80px rgba(30,30,42,0.12),
+    0 4px 16px rgba(30,30,42,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+.status-bar {
+  height: 54px;
+  background: var(--surface);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 24px 8px;
+  position: relative;
+  z-index: 20;
+}
+.status-bar::before {
+  content: '9:41';
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.status-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 126px;
+  height: 34px;
+  background: var(--ink);
+  border-radius: 0 0 22px 22px;
+}
+
+/* ==================== Navigation Bar ==================== */
+.nav-bar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  position: relative;
+  letter-spacing: 0.5px;
+}
+.nav-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cream-deep), transparent);
+}
+.nav-bar .back {
+  position: absolute;
+  left: 8px;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--amber);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s var(--ease-out);
+}
+.nav-bar .back:hover { background: var(--amber-glow); }
+
+/* ==================== Content Area ==================== */
+.content {
+  height: calc(812px - 54px - 48px - 56px);
+  overflow-y: auto;
+  background: var(--cream);
+  scroll-behavior: smooth;
+}
+.content::-webkit-scrollbar { width: 0; }
+.content.no-tab { height: calc(812px - 54px - 48px); }
+
+/* ==================== Tab Bar ==================== */
+.tab-bar {
+  height: 56px;
+  background: var(--surface);
+  display: flex;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  border-top: 1px solid var(--cream-deep);
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color 0.25s var(--ease-out);
+  position: relative;
+  letter-spacing: 0.3px;
+}
+.tab-item.active {
+  color: var(--amber);
+}
+.tab-item.active::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 2px;
+  background: var(--amber);
+  border-radius: 0 0 2px 2px;
+}
+.tab-item .tab-icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+/* ==================== Page Switcher ==================== */
+.page-switcher {
+  position: fixed;
+  top: 32px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(30,30,42,0.06);
+}
+.page-switcher::-webkit-scrollbar { width: 0; }
+.page-switcher .group-title {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  padding: 10px 0 4px 8px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.page-switcher .group-title:first-child { padding-top: 0; }
+.page-switcher button {
+  padding: 7px 14px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s var(--ease-out);
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+.page-switcher button:hover {
+  background: var(--amber-glow);
+  color: var(--amber-deep);
+}
+.page-switcher button.active {
+  background: var(--amber);
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+
+/* ==================== Common Components ==================== */
+.card {
+  background: var(--surface);
+  margin: 10px 14px;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+  transition: box-shadow 0.3s var(--ease-out);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin: 18px 14px 8px;
+  letter-spacing: 1px;
+}
+.list-item {
+  background: var(--surface);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--cream);
+  transition: background 0.15s;
+}
+.list-item:last-child { border-bottom: none; }
+.list-item:active { background: var(--cream); }
+.list-item .item-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+.list-item .item-content { flex: 1; min-width: 0; }
+.list-item .item-title { font-size: 14px; color: var(--ink); font-weight: 600; }
+.list-item .item-desc { font-size: 12px; color: var(--ink-faint); margin-top: 3px; }
+.list-item .item-right { font-size: 12px; color: var(--ink-faint); flex-shrink: 0; margin-left: 8px; }
+.list-item .arrow::after { content: '\203A'; color: var(--ink-faint); font-size: 18px; margin-left: 4px; }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.badge-pending { background: var(--coral-light); color: var(--coral); }
+.badge-confirmed { background: var(--sage-light); color: var(--sage); }
+.badge-modified { background: var(--sky-light); color: var(--sky); }
+.badge-settled { background: var(--plum-light); color: var(--plum); }
+.badge-rejected { background: var(--danger-light); color: var(--danger); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s var(--ease-out);
+  letter-spacing: 0.3px;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--amber) 0%, var(--amber-deep) 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(200,149,108,0.3);
+}
+.btn-primary:hover { box-shadow: 0 4px 20px rgba(200,149,108,0.4); }
+.btn-outline {
+  background: var(--surface);
+  color: var(--amber);
+  border: 1.5px solid var(--amber-light);
+}
+.btn-outline:hover { background: var(--amber-glow); }
+.btn-success {
+  background: linear-gradient(135deg, var(--sage) 0%, #5A8A6A 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(107,155,123,0.3);
+}
+.btn-danger {
+  background: var(--surface);
+  color: var(--danger);
+  border: 1.5px solid var(--danger);
+}
+.btn-sm { padding: 7px 14px; font-size: 12px; width: auto; border-radius: 8px; }
+
+/* Stats */
+.stats-row { display: flex; gap: 10px; padding: 0 14px; }
+.stat-card {
+  flex: 1;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 16px 12px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+}
+.stat-card .stat-value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.stat-card .stat-label { font-size: 11px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.5px; }
+
+/* Forms */
+.form-group { margin-bottom: 18px; }
+.form-label {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+  letter-spacing: 0.3px;
+}
+.form-input {
+  width: 100%;
+  height: 44px;
+  border: 1.5px solid var(--cream-deep);
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  background: var(--cream);
+  color: var(--ink);
+  transition: all 0.2s var(--ease-out);
+}
+.form-input:focus {
+  border-color: var(--amber);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--amber-glow);
+}
+.form-textarea { height: 88px; padding: 12px 14px; resize: none; line-height: 1.6; }
+
+/* Avatar */
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Pages */
+.page { display: none; }
+.page.active { display: block; animation: pageIn 0.35s var(--ease-out); }
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================== Welcome ==================== */
+.welcome-bg {
+  height: calc(812px - 54px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 40px 32px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(200,149,108,0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(91,141,184,0.3) 0%, transparent 50%),
+    linear-gradient(160deg, #1E1E2A 0%, #2A2A3C 40%, #1E1E2A 100%);
+}
+.welcome-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.welcome-bg .logo-mark {
+  width: 80px;
+  height: 80px;
+  border: 2.5px solid rgba(255,255,255,0.25);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(8px);
+  background: rgba(255,255,255,0.06);
+  animation: logoFloat 3s ease-in-out infinite;
+}
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.welcome-bg .app-name {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  margin-bottom: 6px;
+}
+.welcome-bg .app-name-en {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 6px;
+  opacity: 0.5;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.welcome-bg .app-slogan {
+  font-size: 14px;
+  opacity: 0.6;
+  margin-bottom: 56px;
+  letter-spacing: 2px;
+}
+.welcome-bg .wx-btn {
+  width: 100%;
+  padding: 15px;
+  background: #07C160;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(7,193,96,0.3);
+  transition: all 0.2s var(--ease-out);
+  position: relative;
+  z-index: 1;
+}
+.welcome-bg .wx-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(7,193,96,0.4); }
+.welcome-terms {
+  font-size: 11px;
+  opacity: 0.4;
+  margin-top: 18px;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.5px;
+}
+
+/* ==================== Role Select ==================== */
+.role-cards { display: flex; flex-direction: column; gap: 14px; padding: 20px 14px; }
+.role-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s var(--ease-out);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.role-card::after {
+  content: '\203A';
+  position: absolute;
+  right: 20px;
+  font-size: 24px;
+  color: var(--ink-faint);
+  transition: all 0.3s var(--ease-out);
+}
+.role-card:hover {
+  border-color: var(--amber-light);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+.role-card:hover::after { right: 16px; color: var(--amber); }
+.role-card .role-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  flex-shrink: 0;
+}
+.role-card .role-text { flex: 1; }
+.role-card .role-name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.role-card .role-desc { font-size: 12px; color: var(--ink-faint); line-height: 1.6; }
+
+/* ==================== Dashboard ==================== */
+.dashboard-header {
+  padding: 24px 18px 40px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(200,149,108,0.35) 0%, transparent 60%),
+    linear-gradient(160deg, #1E1E2A 0%, #2A2A3C 100%);
+}
+.dashboard-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.dashboard-header .greeting {
+  font-size: 14px;
+  opacity: 0.6;
+  position: relative;
+  letter-spacing: 0.5px;
+}
+.dashboard-header .workshop-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 6px;
+  position: relative;
+  letter-spacing: 1px;
+}
+.dashboard-stats {
+  display: flex;
+  margin: -24px 14px 0;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+.dashboard-stats .ds-card {
+  flex: 1;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 16px 8px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(30,30,42,0.03);
+}
+.dashboard-stats .ds-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+.dashboard-stats .ds-label { font-size: 11px; color: var(--ink-faint); margin-top: 4px; letter-spacing: 0.5px; }
+
+/* Quick Actions */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: var(--surface);
+  margin: 12px 14px;
+  border-radius: var(--radius-md);
+  padding: 18px 8px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+}
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring);
+}
+.quick-action:active { transform: scale(0.92); }
+.quick-action .qa-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: transform 0.2s var(--ease-spring);
+}
+.quick-action:hover .qa-icon { transform: translateY(-2px); }
+.quick-action .qa-label { font-size: 11px; color: var(--ink-muted); font-weight: 500; }
+
+/* Activity Feed */
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--cream);
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+/* Date Bar */
+.date-bar {
+  background: var(--surface);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.date-bar .date-nav { display: flex; align-items: center; gap: 16px; }
+.date-bar .date-text {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+}
+.date-bar .date-arrow {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  background: var(--cream);
+  transition: all 0.15s;
+}
+.date-bar .date-arrow:hover { background: var(--amber-glow); color: var(--amber); }
+
+/* Filter Tabs */
+.filter-tabs {
+  display: flex;
+  background: var(--surface);
+  padding: 0 14px;
+  gap: 4px;
+}
+.filter-tab {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.filter-tab.active {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
+  font-weight: 600;
+}
+
+/* Record Item */
+.record-item {
+  background: var(--surface);
+  margin: 8px 14px;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+  transition: box-shadow 0.2s;
+}
+.record-item:hover { box-shadow: var(--shadow-md); }
+.record-item .ri-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.record-item .ri-sku {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.record-item .ri-body { display: flex; justify-content: space-between; align-items: flex-end; }
+.record-item .ri-info { font-size: 13px; color: var(--ink-muted); line-height: 1.7; }
+.record-item .ri-info b { color: var(--ink); font-weight: 600; }
+.record-item .ri-info .ri-step { color: var(--amber); font-weight: 600; }
+.record-item .ri-qty {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.record-item .ri-price { font-size: 12px; color: var(--ink-faint); text-align: right; }
+.record-item .ri-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cream);
+}
+
+/* Number Input */
+.number-input {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--cream-deep);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--cream);
+}
+.number-input .ni-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--amber);
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.number-input .ni-btn:hover { background: var(--amber-glow); }
+.number-input .ni-value {
+  width: 56px;
+  height: 38px;
+  text-align: center;
+  border: none;
+  border-left: 1.5px solid var(--cream-deep);
+  border-right: 1.5px solid var(--cream-deep);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  outline: none;
+  background: var(--surface);
+}
+
+/* Settlement */
+.settlement-card {
+  background: var(--surface);
+  margin: 8px 14px;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+.settlement-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.settlement-card .sc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.settlement-card .sc-period {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.settlement-card .sc-worker { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+.settlement-card .sc-amount {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--amber-deep);
+  text-align: right;
+}
+.settlement-card .sc-amount-label { font-size: 11px; color: var(--ink-faint); text-align: right; }
+.settlement-card .sc-detail {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--cream);
+}
+
+/* Salary */
+.salary-header {
+  padding: 28px 18px;
+  color: #fff;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(200,149,108,0.5) 0%, transparent 70%),
+    linear-gradient(160deg, var(--amber-deep) 0%, #9B6B45 100%);
+}
+.salary-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.salary-header .salary-month {
+  font-size: 14px;
+  opacity: 0.7;
+  position: relative;
+  letter-spacing: 1px;
+}
+.salary-header .salary-total {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 900;
+  margin-top: 8px;
+  position: relative;
+  letter-spacing: 1px;
+}
+.salary-header .salary-unit { font-size: 12px; opacity: 0.6; position: relative; letter-spacing: 1px; margin-top: 4px; }
+
+/* Log Item */
+.log-item {
+  background: var(--surface);
+  margin: 6px 14px;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+}
+.log-item .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.log-item .log-action { font-size: 13px; font-weight: 600; color: var(--ink); }
+.log-item .log-time { font-size: 11px; color: var(--ink-faint); }
+.log-item .log-detail { font-size: 12px; color: var(--ink-muted); line-height: 1.6; }
+
+/* Profile */
+.profile-header {
+  background: var(--surface);
+  padding: 28px 18px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.profile-header .profile-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.2), transparent),
+    linear-gradient(135deg, var(--amber) 0%, var(--amber-deep) 100%);
+  box-shadow: 0 4px 16px rgba(200,149,108,0.3);
+}
+.profile-header .profile-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.profile-header .profile-phone { font-size: 13px; color: var(--ink-faint); margin-top: 3px; }
+
+/* QR */
+.qr-area { text-align: center; padding: 20px; }
+.qr-box {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto;
+  border: 2px dashed var(--cream-deep);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream);
+}
+.qr-box .qr-placeholder { font-size: 64px; color: var(--cream-deep); }
+.qr-code-text { font-size: 12px; color: var(--ink-faint); margin-top: 12px; }
+.invite-code-display {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: var(--amber);
+  margin-top: 8px;
+}
+
+/* SKU Card */
+.sku-card {
+  background: var(--surface);
+  margin: 8px 14px;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+.sku-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.sku-card .sku-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.sku-card .sku-info { flex: 1; }
+.sku-card .sku-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.sku-card .sku-steps-count { font-size: 12px; color: var(--ink-faint); margin-top: 3px; }
+.sku-card .sku-status { flex-shrink: 0; }
+
+/* Step Fill */
+.fill-sku-header {
+  background: var(--surface);
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--cream);
+}
+.fill-sku-header .fsh-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.fill-sku-header .fsh-desc { font-size: 12px; color: var(--ink-faint); margin-top: 3px; }
+.step-fill-item {
+  background: var(--surface);
+  margin: 8px 14px;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+}
+.step-fill-item .sfi-name { font-size: 15px; font-weight: 600; color: var(--ink); }
+.step-fill-item .sfi-price { font-size: 12px; color: var(--amber); margin-top: 3px; font-weight: 500; }
+
+/* Bind */
+.bind-input-area {
+  background: var(--surface);
+  margin: 14px 14px;
+  border-radius: var(--radius-lg);
+  padding: 24px 18px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(30,30,42,0.03);
+}
+.bind-input-area .bind-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 18px;
+}
+.bind-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 14px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+.bind-divider::before, .bind-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cream-deep), transparent);
+}
+
+/* Notify */
+.notify-badge {
+  background: var(--coral);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 4px;
+}
+
+/* Amount highlight */
+.amount-highlight {
+  background: var(--amber-surface);
+  border: 1px solid rgba(200,149,108,0.15);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin: 10px 14px;
+}
+</style>
+</head>
+<body>
+
+<!-- Page Switcher -->
+<div class="page-switcher" id="pageSwitcher">
+  <div class="group-title">Entry</div>
+  <button onclick="showPage('welcome')" id="btn-welcome" class="active">启动页</button>
+  <button onclick="showPage('login')" id="btn-login">手机号绑定</button>
+  <button onclick="showPage('role-select')" id="btn-role-select">角色选择</button>
+  <div class="group-title">Admin</div>
+  <button onclick="showPage('admin-dashboard')" id="btn-admin-dashboard">管理首页</button>
+  <button onclick="showPage('admin-workshop')" id="btn-admin-workshop">工坊设置</button>
+  <button onclick="showPage('admin-workers')" id="btn-admin-workers">工人管理</button>
+  <button onclick="showPage('admin-approve')" id="btn-admin-approve">审批申请</button>
+  <button onclick="showPage('admin-skus')" id="btn-admin-skus">SKU 管理</button>
+  <button onclick="showPage('admin-sku-edit')" id="btn-admin-sku-edit">工序单价</button>
+  <button onclick="showPage('admin-records')" id="btn-admin-records">记录审核</button>
+  <button onclick="showPage('admin-settlement')" id="btn-admin-settlement">结算管理</button>
+  <button onclick="showPage('admin-settlement-detail')" id="btn-admin-settlement-detail">结算明细</button>
+  <button onclick="showPage('admin-logs')" id="btn-admin-logs">操作日志</button>
+  <div class="group-title">Worker</div>
+  <button onclick="showPage('worker-bind')" id="btn-worker-bind">绑定主家</button>
+  <button onclick="showPage('worker-worklog')" id="btn-worker-worklog">每日记工</button>
+  <button onclick="showPage('worker-fill')" id="btn-worker-fill">填写数量</button>
+  <button onclick="showPage('worker-history')" id="btn-worker-history">历史记录</button>
+  <button onclick="showPage('worker-salary')" id="btn-worker-salary">工资查看</button>
+  <div class="group-title">General</div>
+  <button onclick="showPage('profile')" id="btn-profile">个人中心</button>
+</div>
+
+<!-- Phone -->
+<div class="phone-frame">
+  <div class="status-bar"></div>
+
+  <!-- ===== 启动页 ===== -->
+  <div class="page active" id="page-welcome">
+    <div class="welcome-bg">
+      <div class="logo-mark">&#9874;</div>
+      <div class="app-name">计工宝</div>
+      <div class="app-name-en">TallyPro</div>
+      <div class="app-slogan">计件记工 · 轻松管理</div>
+      <button class="wx-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.294.295a.326.326 0 00.17-.054l1.82-1.073a.786.786 0 01.547-.1 10.2 10.2 0 003.082.475c.34 0 .675-.018 1.007-.047a5.854 5.854 0 01-.242-1.676c0-3.813 3.578-6.907 7.996-6.907.339 0 .673.018 1.003.048C16.953 4.74 13.2 2.188 8.691 2.188zm-2.97 4.78a1.06 1.06 0 11-.001 2.122 1.06 1.06 0 01.001-2.122zm5.437 0a1.06 1.06 0 110 2.12 1.06 1.06 0 010-2.12zM24 14.355c0-3.345-3.304-6.06-7.36-6.06-4.058 0-7.362 2.715-7.362 6.06 0 3.345 3.304 6.06 7.361 6.06.852 0 1.672-.117 2.44-.33a.63.63 0 01.437.082l1.442.85a.258.258 0 00.136.042.236.236 0 00.236-.236c0-.058-.023-.114-.039-.17l-.308-1.17a.473.473 0 01.17-.533C22.983 17.965 24 16.282 24 14.355zm-9.768-1.026a.845.845 0 110 1.69.845.845 0 010-1.69zm4.815 0a.845.845 0 110 1.69.845.845 0 010-1.69z"/></svg>
+        微信一键登录
+      </button>
+      <div class="welcome-terms">登录即表示同意《用户协议》和《隐私政策》</div>
+    </div>
+  </div>
+
+  <!-- ===== 手机号绑定 ===== -->
+  <div class="page" id="page-login">
+    <div class="nav-bar">绑定手机号</div>
+    <div class="content no-tab" style="background:var(--surface);">
+      <div style="padding: 40px 24px;">
+        <div style="text-align:center; margin-bottom:36px;">
+          <div style="width:72px;height:72px;margin:0 auto 14px;border-radius:50%;background:var(--amber-glow);display:flex;align-items:center;justify-content:center;font-size:32px;">&#128241;</div>
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);">绑定手机号</div>
+          <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;line-height:1.5;">绑定后可被主家通过手机号添加</div>
+        </div>
+        <div class="form-group">
+          <div style="display:flex;gap:8px;">
+            <input class="form-input" placeholder="请输入手机号" style="flex:1;">
+            <button style="padding:0 16px;background:var(--amber);color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;">获取验证码</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <input class="form-input" placeholder="请输入验证码">
+        </div>
+        <div style="margin-top:8px;">
+          <button class="btn btn-primary">确认绑定</button>
+        </div>
+        <div style="text-align:center;margin-top:20px;">
+          <span style="font-size:13px;color:var(--amber);cursor:pointer;font-weight:500;">使用微信手机号快速验证 ›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 角色选择 ===== -->
+  <div class="page" id="page-role-select">
+    <div class="nav-bar">选择身份</div>
+    <div class="content no-tab">
+      <div style="padding:16px 14px 0;text-align:center;">
+        <div style="font-size:13px;color:var(--ink-faint);letter-spacing:1px;">请选择您的身份进入</div>
+      </div>
+      <div class="role-cards">
+        <div class="role-card" onclick="showPage('admin-dashboard')">
+          <div class="role-icon" style="background:var(--amber-glow);">&#127981;</div>
+          <div class="role-text">
+            <div class="role-name">我是主家</div>
+            <div class="role-desc">管理工坊、设置产品工序、审核记录、结算工资</div>
+          </div>
+        </div>
+        <div class="role-card" onclick="showPage('worker-worklog')">
+          <div class="role-icon" style="background:var(--sage-light);">&#128119;</div>
+          <div class="role-text">
+            <div class="role-name">我是工人</div>
+            <div class="role-desc">绑定工坊、每日填报工量、查看工资明细</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - Dashboard ===== -->
+  <div class="page" id="page-admin-dashboard">
+    <div class="nav-bar" style="background:transparent;color:#fff;border:none;position:absolute;z-index:2;width:100%;">
+      <span style="position:relative;"></span>
+    </div>
+    <div class="content" style="height:calc(812px - 54px - 56px);padding-top:48px;">
+      <div class="dashboard-header">
+        <div class="greeting">下午好，王老板</div>
+        <div class="workshop-name">永丰服装加工坊</div>
+      </div>
+      <div class="dashboard-stats">
+        <div class="ds-card">
+          <div class="ds-value" style="color:var(--coral);">12</div>
+          <div class="ds-label">待审核</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-value" style="color:var(--sky);">8</div>
+          <div class="ds-label">工人数</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-value" style="color:var(--sage);">¥3,680</div>
+          <div class="ds-label">本月工资</div>
+        </div>
+      </div>
+      <div class="quick-actions">
+        <div class="quick-action" onclick="showPage('admin-records')">
+          <div class="qa-icon" style="background:var(--coral-light);">&#128203;</div>
+          <div class="qa-label">审核记录</div>
+        </div>
+        <div class="quick-action" onclick="showPage('admin-workers')">
+          <div class="qa-icon" style="background:var(--sky-light);">&#128101;</div>
+          <div class="qa-label">工人管理</div>
+        </div>
+        <div class="quick-action" onclick="showPage('admin-skus')">
+          <div class="qa-icon" style="background:var(--sage-light);">&#128230;</div>
+          <div class="qa-label">产品管理</div>
+        </div>
+        <div class="quick-action" onclick="showPage('admin-settlement')">
+          <div class="qa-icon" style="background:var(--plum-light);">&#128176;</div>
+          <div class="qa-label">结算统计</div>
+        </div>
+      </div>
+      <div class="section-title">今日动态</div>
+      <div class="card">
+        <div class="activity-item">
+          <div class="activity-dot" style="background:var(--coral);"></div>
+          <div>张三 提交了 <b>3</b> 条记录，等待审核</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:var(--amber);"></div>
+          <div>李四 修改了 1 条记录（西裤-裁剪）</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:var(--sage);"></div>
+          <div>王五 的 5 条记录已确认</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:var(--sky);"></div>
+          <div>赵六 申请加入工坊，待审批</div>
+        </div>
+      </div>
+      <div class="section-title">本月概览</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink-muted);line-height:2.4;">
+          <div>
+            <div>总记工条数</div><div>已确认</div><div>待确认</div><div>已结算</div>
+          </div>
+          <div style="text-align:right;font-weight:600;color:var(--ink);">
+            <div>156 条</div><div>132 条</div><div>12 条</div><div>12 条</div>
+          </div>
+        </div>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active"><div class="tab-icon">&#127968;</div>首页</div>
+      <div class="tab-item" onclick="showPage('admin-records')"><div class="tab-icon">&#128203;</div>审核</div>
+      <div class="tab-item" onclick="showPage('admin-skus')"><div class="tab-icon">&#128230;</div>产品</div>
+      <div class="tab-item" onclick="showPage('profile')"><div class="tab-icon">&#128100;</div>我的</div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - 工坊设置 ===== -->
+  <div class="page" id="page-admin-workshop">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-dashboard')">&#8249;</span>工坊设置</div>
+    <div class="content no-tab">
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label">工坊名称</label>
+          <input class="form-input" value="永丰服装加工坊">
+        </div>
+        <div class="form-group">
+          <label class="form-label">工坊简介</label>
+          <textarea class="form-input form-textarea">专注中高端西裤、衬衫加工，欢迎有经验的师傅加入。</textarea>
+        </div>
+      </div>
+      <div class="section-title">邀请工人</div>
+      <div class="card">
+        <div class="qr-area">
+          <div class="qr-box"><div class="qr-placeholder">&#9641;</div></div>
+          <div class="qr-code-text">扫描二维码加入工坊</div>
+          <div class="invite-code-display">A8K3MZ</div>
+          <div style="font-size:11px;color:var(--ink-faint);margin-top:6px;">有效期至 2026-03-28</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-outline" style="flex:1;font-size:13px;">复制邀请码</button>
+          <button class="btn btn-primary" style="flex:1;font-size:13px;">重新生成</button>
+        </div>
+      </div>
+      <div style="padding:16px 14px;">
+        <button class="btn btn-danger">停用工坊</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - 工人管理 ===== -->
+  <div class="page" id="page-admin-workers">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-dashboard')">&#8249;</span>工人管理</div>
+    <div class="content no-tab">
+      <div class="filter-tabs">
+        <div class="filter-tab active">全部 (8)</div>
+        <div class="filter-tab">待审批 <span class="notify-badge">2</span></div>
+        <div class="filter-tab">已移除</div>
+      </div>
+      <div style="margin-top:8px;">
+        <div class="list-item" style="margin:0 14px;border-radius:var(--radius-md) var(--radius-md) 0 0;box-shadow:var(--shadow-sm);border:1px solid rgba(30,30,42,0.03);border-bottom:1px solid var(--cream);">
+          <div class="avatar" style="background:var(--sky-light);color:var(--sky);">张</div>
+          <div class="item-content" style="margin-left:12px;">
+            <div class="item-title">张三</div>
+            <div class="item-desc">138****1234 · 本月 45 条记录</div>
+          </div>
+          <div class="item-right"><span class="badge badge-confirmed">已通过</span></div>
+        </div>
+        <div class="list-item" style="margin:0 14px;box-shadow:var(--shadow-sm);border-left:1px solid rgba(30,30,42,0.03);border-right:1px solid rgba(30,30,42,0.03);border-bottom:1px solid var(--cream);">
+          <div class="avatar" style="background:var(--sage-light);color:var(--sage);">李</div>
+          <div class="item-content" style="margin-left:12px;">
+            <div class="item-title">李四</div>
+            <div class="item-desc">139****5678 · 本月 32 条记录</div>
+          </div>
+          <div class="item-right"><span class="badge badge-confirmed">已通过</span></div>
+        </div>
+        <div class="list-item" style="margin:0 14px;box-shadow:var(--shadow-sm);border-left:1px solid rgba(30,30,42,0.03);border-right:1px solid rgba(30,30,42,0.03);border-bottom:1px solid var(--cream);">
+          <div class="avatar" style="background:var(--plum-light);color:var(--plum);">王</div>
+          <div class="item-content" style="margin-left:12px;">
+            <div class="item-title">王五</div>
+            <div class="item-desc">136****9012 · 本月 28 条记录</div>
+          </div>
+          <div class="item-right"><span class="badge badge-confirmed">已通过</span></div>
+        </div>
+        <div class="list-item" style="margin:0 14px;box-shadow:var(--shadow-sm);border-left:1px solid rgba(30,30,42,0.03);border-right:1px solid rgba(30,30,42,0.03);border-bottom:1px solid var(--cream);">
+          <div class="avatar" style="background:var(--coral-light);color:var(--coral);">赵</div>
+          <div class="item-content" style="margin-left:12px;">
+            <div class="item-title">赵六</div>
+            <div class="item-desc">137****3456 · 刚刚申请</div>
+          </div>
+          <div class="item-right"><span class="badge badge-pending">待审批</span></div>
+        </div>
+        <div class="list-item" style="margin:0 14px;border-radius:0 0 var(--radius-md) var(--radius-md);box-shadow:var(--shadow-sm);border:1px solid rgba(30,30,42,0.03);border-top:none;">
+          <div class="avatar" style="background:var(--amber-glow);color:var(--amber);">钱</div>
+          <div class="item-content" style="margin-left:12px;">
+            <div class="item-title">钱七</div>
+            <div class="item-desc">135****7890 · 10分钟前申请</div>
+          </div>
+          <div class="item-right"><span class="badge badge-pending">待审批</span></div>
+        </div>
+      </div>
+      <div style="padding:16px 14px;">
+        <button class="btn btn-outline">+ 通过手机号添加工人</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - 审批 ===== -->
+  <div class="page" id="page-admin-approve">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-workers')">&#8249;</span>审批申请</div>
+    <div class="content no-tab">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+          <div class="avatar" style="width:60px;height:60px;font-size:24px;background:var(--coral-light);color:var(--coral);">赵</div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);">赵六</div>
+            <div style="font-size:13px;color:var(--ink-faint);margin-top:3px;">手机号: 137****3456</div>
+            <div style="font-size:12px;color:var(--ink-faint);margin-top:2px;">申请时间: 2026-02-26 14:30</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">备注名称</label>
+          <input class="form-input" placeholder="为该工人设置备注名（可选）">
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-danger" style="flex:1;">拒绝</button>
+          <button class="btn btn-success" style="flex:1;">通过</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - SKU 管理 ===== -->
+  <div class="page" id="page-admin-skus">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-dashboard')">&#8249;</span>产品管理</div>
+    <div class="content no-tab">
+      <div style="padding-top:8px;">
+        <div class="sku-card" onclick="showPage('admin-sku-edit')">
+          <div class="sku-img">&#128084;</div>
+          <div class="sku-info">
+            <div class="sku-name">男士西裤</div>
+            <div class="sku-steps-count">4 道工序 · 本月 96 件</div>
+          </div>
+          <div class="sku-status"><span class="badge badge-confirmed">启用中</span></div>
+        </div>
+        <div class="sku-card">
+          <div class="sku-img">&#128085;</div>
+          <div class="sku-info">
+            <div class="sku-name">男士衬衫</div>
+            <div class="sku-steps-count">3 道工序 · 本月 64 件</div>
+          </div>
+          <div class="sku-status"><span class="badge badge-confirmed">启用中</span></div>
+        </div>
+        <div class="sku-card" style="opacity:0.6;">
+          <div class="sku-img">&#128087;</div>
+          <div class="sku-info">
+            <div class="sku-name">女士连衣裙</div>
+            <div class="sku-steps-count">5 道工序 · 本月 0 件</div>
+          </div>
+          <div class="sku-status"><span class="badge" style="background:var(--cream);color:var(--ink-faint);">已停用</span></div>
+        </div>
+      </div>
+      <div style="padding:16px 14px;">
+        <button class="btn btn-primary">+ 添加产品</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - 工序管理 ===== -->
+  <div class="page" id="page-admin-sku-edit">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-skus')">&#8249;</span>男士西裤 · 工序</div>
+    <div class="content no-tab">
+      <div class="card">
+        <div class="form-group"><label class="form-label">产品名称</label><input class="form-input" value="男士西裤"></div>
+        <div class="form-group"><label class="form-label">产品描述</label><textarea class="form-input form-textarea">标准版型商务西裤，常规面料。</textarea></div>
+      </div>
+      <div class="section-title">工序列表</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="list-item">
+          <div class="item-icon" style="background:var(--sky-light);font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--sky);">1</div>
+          <div class="item-content"><div class="item-title">裁剪</div><div class="item-desc" style="color:var(--amber);font-weight:500;">¥2.50 / 件</div></div>
+          <div class="item-right arrow" style="color:var(--ink-faint);">编辑</div>
+        </div>
+        <div class="list-item">
+          <div class="item-icon" style="background:var(--sage-light);font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--sage);">2</div>
+          <div class="item-content"><div class="item-title">缝合</div><div class="item-desc" style="color:var(--amber);font-weight:500;">¥5.00 / 件</div></div>
+          <div class="item-right arrow" style="color:var(--ink-faint);">编辑</div>
+        </div>
+        <div class="list-item">
+          <div class="item-icon" style="background:var(--coral-light);font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--coral);">3</div>
+          <div class="item-content"><div class="item-title">锁边</div><div class="item-desc" style="color:var(--amber);font-weight:500;">¥1.80 / 件</div></div>
+          <div class="item-right arrow" style="color:var(--ink-faint);">编辑</div>
+        </div>
+        <div class="list-item">
+          <div class="item-icon" style="background:var(--plum-light);font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--plum);">4</div>
+          <div class="item-content"><div class="item-title">熨烫包装</div><div class="item-desc" style="color:var(--amber);font-weight:500;">¥1.20 / 件</div></div>
+          <div class="item-right arrow" style="color:var(--ink-faint);">编辑</div>
+        </div>
+      </div>
+      <div style="padding:16px 14px;"><button class="btn btn-outline">+ 添加工序</button></div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - 记录审核 ===== -->
+  <div class="page" id="page-admin-records">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-dashboard')">&#8249;</span>记录审核</div>
+    <div class="content no-tab">
+      <div class="date-bar">
+        <div class="date-nav">
+          <span class="date-arrow">&#8249;</span>
+          <span class="date-text">2026-02-26</span>
+          <span class="date-arrow">&#8250;</span>
+        </div>
+        <div style="font-size:12px;color:var(--coral);font-weight:600;">12条待审核</div>
+      </div>
+      <div class="filter-tabs">
+        <div class="filter-tab active">全部 (18)</div>
+        <div class="filter-tab">待确认 (12)</div>
+        <div class="filter-tab">已确认 (6)</div>
+      </div>
+      <div class="record-item">
+        <div class="ri-header">
+          <span class="ri-sku">&#128084; 男士西裤</span>
+          <span class="badge badge-pending">待确认</span>
+        </div>
+        <div class="ri-body">
+          <div class="ri-info"><div>工人: <b>张三</b></div><div>工序: <span class="ri-step">裁剪</span> · ¥2.50/件</div></div>
+          <div style="text-align:right;"><div class="ri-qty">50 件</div><div class="ri-price">¥125.00</div></div>
+        </div>
+        <div class="ri-actions">
+          <button class="btn btn-sm btn-outline" style="flex:1;">修改</button>
+          <button class="btn btn-sm btn-success" style="flex:1;">确认</button>
+        </div>
+      </div>
+      <div class="record-item">
+        <div class="ri-header">
+          <span class="ri-sku">&#128084; 男士西裤</span>
+          <span class="badge badge-pending">待确认</span>
+        </div>
+        <div class="ri-body">
+          <div class="ri-info"><div>工人: <b>张三</b></div><div>工序: <span class="ri-step">缝合</span> · ¥5.00/件</div></div>
+          <div style="text-align:right;"><div class="ri-qty">30 件</div><div class="ri-price">¥150.00</div></div>
+        </div>
+        <div class="ri-actions">
+          <button class="btn btn-sm btn-outline" style="flex:1;">修改</button>
+          <button class="btn btn-sm btn-success" style="flex:1;">确认</button>
+        </div>
+      </div>
+      <div class="record-item">
+        <div class="ri-header">
+          <span class="ri-sku">&#128085; 男士衬衫</span>
+          <span class="badge badge-confirmed">已确认</span>
+        </div>
+        <div class="ri-body">
+          <div class="ri-info"><div>工人: <b>李四</b></div><div>工序: <span class="ri-step">缝合</span> · ¥4.50/件</div></div>
+          <div style="text-align:right;"><div class="ri-qty">40 件</div><div class="ri-price">¥180.00</div></div>
+        </div>
+      </div>
+      <div style="padding:12px 14px;"><button class="btn btn-primary">批量确认全部待审核</button></div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - 结算管理 ===== -->
+  <div class="page" id="page-admin-settlement">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-dashboard')">&#8249;</span>结算管理</div>
+    <div class="content no-tab">
+      <div class="stats-row" style="margin-top:12px;">
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--amber-deep);">¥12,480</div>
+          <div class="stat-label">本月总工资</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--sage);">¥8,200</div>
+          <div class="stat-label">已结算</div>
+        </div>
+      </div>
+      <div class="section-title">结算单列表</div>
+      <div class="settlement-card" onclick="showPage('admin-settlement-detail')">
+        <div class="sc-header">
+          <div><div class="sc-period">2026-02-01 ~ 02-15</div><div class="sc-worker">张三</div></div>
+          <div><div class="sc-amount">¥2,150.00</div><div class="sc-amount-label">总金额</div></div>
+        </div>
+        <div class="sc-detail"><span class="badge badge-settled">已确认</span>&nbsp; 含 45 条记录 · 2 个产品</div>
+      </div>
+      <div class="settlement-card">
+        <div class="sc-header">
+          <div><div class="sc-period">2026-02-01 ~ 02-15</div><div class="sc-worker">李四</div></div>
+          <div><div class="sc-amount">¥1,680.00</div><div class="sc-amount-label">总金额</div></div>
+        </div>
+        <div class="sc-detail"><span class="badge badge-pending">草稿</span>&nbsp; 含 32 条记录 · 2 个产品</div>
+      </div>
+      <div style="padding:16px 14px;"><button class="btn btn-primary">+ 创建结算单</button></div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - 结算明细 ===== -->
+  <div class="page" id="page-admin-settlement-detail">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-settlement')">&#8249;</span>结算明细</div>
+    <div class="content no-tab">
+      <div class="amount-highlight" style="text-align:center;">
+        <div style="font-size:13px;color:var(--ink-muted);">张三 · 2026-02-01 ~ 02-15</div>
+        <div style="font-family:var(--font-display);font-size:34px;font-weight:900;color:var(--amber-deep);margin:8px 0;">¥2,150.00</div>
+        <span class="badge badge-settled">已确认</span>
+      </div>
+      <div class="section-title">男士西裤</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="list-item"><div class="item-content"><div class="item-title">裁剪</div><div class="item-desc">¥2.50 × 120 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥300.00</div></div>
+        <div class="list-item"><div class="item-content"><div class="item-title">缝合</div><div class="item-desc">¥5.00 × 200 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥1,000.00</div></div>
+        <div class="list-item"><div class="item-content"><div class="item-title">锁边</div><div class="item-desc">¥1.80 × 150 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥270.00</div></div>
+        <div class="list-item"><div class="item-content"><div class="item-title">熨烫包装</div><div class="item-desc">¥1.20 × 100 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥120.00</div></div>
+      </div>
+      <div class="section-title">男士衬衫</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="list-item"><div class="item-content"><div class="item-title">裁剪</div><div class="item-desc">¥2.00 × 80 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥160.00</div></div>
+        <div class="list-item"><div class="item-content"><div class="item-title">缝合</div><div class="item-desc">¥4.50 × 60 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥270.00</div></div>
+        <div class="list-item"><div class="item-content"><div class="item-title">锁边</div><div class="item-desc">¥1.50 × 20 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥30.00</div></div>
+      </div>
+      <div style="padding:16px 14px;"><button class="btn btn-primary">导出报表</button></div>
+    </div>
+  </div>
+
+  <!-- ===== 管理端 - 操作日志 ===== -->
+  <div class="page" id="page-admin-logs">
+    <div class="nav-bar"><span class="back" onclick="showPage('admin-dashboard')">&#8249;</span>操作日志</div>
+    <div class="content no-tab">
+      <div class="filter-tabs">
+        <div class="filter-tab active">全部</div>
+        <div class="filter-tab">审核</div>
+        <div class="filter-tab">结算</div>
+        <div class="filter-tab">成员</div>
+      </div>
+      <div style="padding-top:6px;">
+        <div class="log-item">
+          <div class="log-header"><span class="log-action">&#10003; 确认记录</span><span class="log-time">今天 15:30</span></div>
+          <div class="log-detail">确认了 李四 的记录：男士衬衫-缝合 40件</div>
+        </div>
+        <div class="log-item">
+          <div class="log-header"><span class="log-action">&#9998; 修改数量</span><span class="log-time">今天 15:28</span></div>
+          <div class="log-detail">修改了 张三 的记录：男士西裤-裁剪 55件 → 50件<br>原因：实际清点数量为50</div>
+        </div>
+        <div class="log-item">
+          <div class="log-header"><span class="log-action">&#128176; 创建结算单</span><span class="log-time">今天 14:00</span></div>
+          <div class="log-detail">为 张三 创建结算单：02-01 ~ 02-15，¥2,150.00</div>
+        </div>
+        <div class="log-item">
+          <div class="log-header"><span class="log-action">&#128100; 审批通过</span><span class="log-time">昨天 09:15</span></div>
+          <div class="log-detail">通过了 王五 的加入申请</div>
+        </div>
+        <div class="log-item">
+          <div class="log-header"><span class="log-action">&#128176; 确认结算</span><span class="log-time">2026-02-20</span></div>
+          <div class="log-detail">确认了 张三 的结算单，标记 45 条记录为已结算</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 工人端 - 绑定 ===== -->
+  <div class="page" id="page-worker-bind">
+    <div class="nav-bar">绑定工坊</div>
+    <div class="content no-tab">
+      <div class="bind-input-area">
+        <div class="bind-title">扫码绑定</div>
+        <div style="width:100px;height:100px;margin:0 auto;background:var(--cream);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--ink-faint);">&#128247;</div>
+        <div style="font-size:12px;color:var(--ink-faint);margin-top:10px;">点击扫描主家二维码</div>
+      </div>
+      <div class="bind-divider">或</div>
+      <div class="bind-input-area">
+        <div class="bind-title">输入邀请码</div>
+        <input class="form-input" placeholder="请输入6位邀请码" style="text-align:center;letter-spacing:6px;font-family:var(--font-display);font-size:20px;font-weight:700;">
+        <div style="margin-top:14px;"><button class="btn btn-primary">申请加入</button></div>
+      </div>
+      <div class="section-title">我的工坊</div>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:42px;height:42px;border-radius:12px;background:var(--amber-glow);display:flex;align-items:center;justify-content:center;font-size:20px;">&#127981;</div>
+          <div style="flex:1;"><div style="font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--ink);">永丰服装加工坊</div><div style="font-size:12px;color:var(--ink-faint);margin-top:2px;">主家: 王老板</div></div>
+          <span class="badge badge-confirmed">已绑定</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 工人端 - 每日记工 ===== -->
+  <div class="page" id="page-worker-worklog">
+    <div class="nav-bar">每日记工</div>
+    <div class="content">
+      <div class="date-bar">
+        <div class="date-nav">
+          <span class="date-arrow">&#8249;</span>
+          <span class="date-text">2026-02-26 (今天)</span>
+          <span class="date-arrow">&#8250;</span>
+        </div>
+      </div>
+      <div class="section-title">&#11088; 常用工序</div>
+      <div class="sku-card" onclick="showPage('worker-fill')">
+        <div class="sku-img" style="width:42px;height:42px;font-size:20px;">&#128084;</div>
+        <div class="sku-info"><div class="sku-name" style="font-size:14px;">男士西裤 · 裁剪</div><div class="sku-steps-count">¥2.50/件</div></div>
+        <div style="color:var(--amber);font-size:22px;font-weight:300;">+</div>
+      </div>
+      <div class="sku-card">
+        <div class="sku-img" style="width:42px;height:42px;font-size:20px;">&#128084;</div>
+        <div class="sku-info"><div class="sku-name" style="font-size:14px;">男士西裤 · 缝合</div><div class="sku-steps-count">¥5.00/件</div></div>
+        <div style="color:var(--amber);font-size:22px;font-weight:300;">+</div>
+      </div>
+      <div class="section-title">全部产品</div>
+      <div class="sku-card" onclick="showPage('worker-fill')">
+        <div class="sku-img">&#128084;</div>
+        <div class="sku-info"><div class="sku-name">男士西裤</div><div class="sku-steps-count">4 道工序</div></div>
+        <div style="color:var(--ink-faint);font-size:18px;">&#8250;</div>
+      </div>
+      <div class="sku-card">
+        <div class="sku-img">&#128085;</div>
+        <div class="sku-info"><div class="sku-name">男士衬衫</div><div class="sku-steps-count">3 道工序</div></div>
+        <div style="color:var(--ink-faint);font-size:18px;">&#8250;</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active"><div class="tab-icon">&#9998;</div>记工</div>
+      <div class="tab-item" onclick="showPage('worker-history')"><div class="tab-icon">&#128203;</div>记录</div>
+      <div class="tab-item" onclick="showPage('worker-salary')"><div class="tab-icon">&#128176;</div>工资</div>
+      <div class="tab-item" onclick="showPage('profile')"><div class="tab-icon">&#128100;</div>我的</div>
+    </div>
+  </div>
+
+  <!-- ===== 工人端 - 填写数量 ===== -->
+  <div class="page" id="page-worker-fill">
+    <div class="nav-bar"><span class="back" onclick="showPage('worker-worklog')">&#8249;</span>填写数量</div>
+    <div class="content no-tab">
+      <div class="fill-sku-header">
+        <div class="fsh-name">&#128084; 男士西裤</div>
+        <div class="fsh-desc">2026-02-26 (今天)</div>
+      </div>
+      <div class="step-fill-item">
+        <div class="sfi-info"><div class="sfi-name">裁剪</div><div class="sfi-price">¥2.50 / 件</div></div>
+        <div class="number-input"><button class="ni-btn">−</button><input class="ni-value" value="50"><button class="ni-btn">+</button></div>
+      </div>
+      <div class="step-fill-item">
+        <div class="sfi-info"><div class="sfi-name">缝合</div><div class="sfi-price">¥5.00 / 件</div></div>
+        <div class="number-input"><button class="ni-btn">−</button><input class="ni-value" value="30"><button class="ni-btn">+</button></div>
+      </div>
+      <div class="step-fill-item">
+        <div class="sfi-info"><div class="sfi-name">锁边</div><div class="sfi-price">¥1.80 / 件</div></div>
+        <div class="number-input"><button class="ni-btn">−</button><input class="ni-value" value="0"><button class="ni-btn">+</button></div>
+      </div>
+      <div class="step-fill-item">
+        <div class="sfi-info"><div class="sfi-name">熨烫包装</div><div class="sfi-price">¥1.20 / 件</div></div>
+        <div class="number-input"><button class="ni-btn">−</button><input class="ni-value" value="0"><button class="ni-btn">+</button></div>
+      </div>
+      <div class="amount-highlight">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:14px;color:var(--ink-muted);">预计金额</span>
+          <span style="font-family:var(--font-display);font-size:24px;font-weight:900;color:var(--amber-deep);">¥275.00</span>
+        </div>
+        <div style="font-size:11px;color:var(--ink-faint);margin-top:4px;">裁剪 50×2.50 + 缝合 30×5.00</div>
+      </div>
+      <div style="padding:0 14px 16px;"><button class="btn btn-primary">提交记录</button></div>
+    </div>
+  </div>
+
+  <!-- ===== 工人端 - 历史记录 ===== -->
+  <div class="page" id="page-worker-history">
+    <div class="nav-bar">历史记录</div>
+    <div class="content">
+      <div class="filter-tabs">
+        <div class="filter-tab active">全部</div>
+        <div class="filter-tab">待确认</div>
+        <div class="filter-tab">已确认</div>
+        <div class="filter-tab">已结算</div>
+      </div>
+      <div class="section-title">2026-02-26</div>
+      <div class="record-item">
+        <div class="ri-header"><span class="ri-sku">&#128084; 男士西裤</span><span class="badge badge-pending">待确认</span></div>
+        <div class="ri-body">
+          <div class="ri-info"><div>工序: <span class="ri-step">裁剪</span></div><div>¥2.50 × 50 件</div></div>
+          <div style="text-align:right;"><div class="ri-qty">¥125.00</div></div>
+        </div>
+      </div>
+      <div class="record-item">
+        <div class="ri-header"><span class="ri-sku">&#128084; 男士西裤</span><span class="badge badge-pending">待确认</span></div>
+        <div class="ri-body">
+          <div class="ri-info"><div>工序: <span class="ri-step">缝合</span></div><div>¥5.00 × 30 件</div></div>
+          <div style="text-align:right;"><div class="ri-qty">¥150.00</div></div>
+        </div>
+      </div>
+      <div class="section-title">2026-02-25</div>
+      <div class="record-item">
+        <div class="ri-header"><span class="ri-sku">&#128084; 男士西裤</span><span class="badge badge-confirmed">已确认</span></div>
+        <div class="ri-body">
+          <div class="ri-info"><div>工序: <span class="ri-step">裁剪</span></div><div>¥2.50 × 60 件</div></div>
+          <div style="text-align:right;"><div class="ri-qty">¥150.00</div></div>
+        </div>
+      </div>
+      <div class="record-item">
+        <div class="ri-header"><span class="ri-sku">&#128085; 男士衬衫</span><span class="badge badge-modified">已修改</span></div>
+        <div class="ri-body">
+          <div class="ri-info"><div>工序: <span class="ri-step">缝合</span></div><div>¥4.50 × <s style="color:var(--ink-faint);">45</s> 40 件</div></div>
+          <div style="text-align:right;"><div class="ri-qty">¥180.00</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item" onclick="showPage('worker-worklog')"><div class="tab-icon">&#9998;</div>记工</div>
+      <div class="tab-item active"><div class="tab-icon">&#128203;</div>记录</div>
+      <div class="tab-item" onclick="showPage('worker-salary')"><div class="tab-icon">&#128176;</div>工资</div>
+      <div class="tab-item" onclick="showPage('profile')"><div class="tab-icon">&#128100;</div>我的</div>
+    </div>
+  </div>
+
+  <!-- ===== 工人端 - 工资 ===== -->
+  <div class="page" id="page-worker-salary">
+    <div class="nav-bar" style="background:transparent;color:#fff;border:none;position:absolute;z-index:2;width:100%;"><span style="position:relative;"></span></div>
+    <div class="content" style="padding-top:48px;height:calc(812px - 54px - 56px);">
+      <div class="salary-header">
+        <div class="salary-month">&#8249; 2026年2月 &#8250;</div>
+        <div class="salary-total">¥3,680.00</div>
+        <div class="salary-unit">本月累计收入</div>
+      </div>
+      <div class="stats-row" style="margin-top:12px;">
+        <div class="stat-card"><div class="stat-value" style="font-size:18px;color:var(--sage);">¥2,150</div><div class="stat-label">已结算</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:18px;color:var(--coral);">¥1,530</div><div class="stat-label">待结算</div></div>
+      </div>
+      <div class="section-title">收入明细</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="list-item"><div class="item-content"><div class="item-title">男士西裤 · 裁剪</div><div class="item-desc">¥2.50 × 480 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥1,200.00</div></div>
+        <div class="list-item"><div class="item-content"><div class="item-title">男士西裤 · 缝合</div><div class="item-desc">¥5.00 × 320 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥1,600.00</div></div>
+        <div class="list-item"><div class="item-content"><div class="item-title">男士衬衫 · 缝合</div><div class="item-desc">¥4.50 × 120 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥540.00</div></div>
+        <div class="list-item"><div class="item-content"><div class="item-title">男士西裤 · 锁边</div><div class="item-desc">¥1.80 × 200 件</div></div><div class="item-right" style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:14px;">¥340.00</div></div>
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item" onclick="showPage('worker-worklog')"><div class="tab-icon">&#9998;</div>记工</div>
+      <div class="tab-item" onclick="showPage('worker-history')"><div class="tab-icon">&#128203;</div>记录</div>
+      <div class="tab-item active"><div class="tab-icon">&#128176;</div>工资</div>
+      <div class="tab-item" onclick="showPage('profile')"><div class="tab-icon">&#128100;</div>我的</div>
+    </div>
+  </div>
+
+  <!-- ===== 个人中心 ===== -->
+  <div class="page" id="page-profile">
+    <div class="nav-bar">个人中心</div>
+    <div class="content no-tab">
+      <div class="profile-header">
+        <div class="profile-avatar">&#128100;</div>
+        <div><div class="profile-name">张三</div><div class="profile-phone">138****1234</div></div>
+      </div>
+      <div class="section-title">身份切换</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="list-item" onclick="showPage('admin-dashboard')" style="cursor:pointer;">
+          <div class="item-icon" style="background:var(--amber-glow);font-size:18px;">&#127981;</div>
+          <div class="item-content"><div class="item-title">永丰服装加工坊</div><div class="item-desc">管理员 (主家)</div></div>
+          <div class="item-right arrow"></div>
+        </div>
+        <div class="list-item" onclick="showPage('worker-worklog')" style="cursor:pointer;">
+          <div class="item-icon" style="background:var(--sage-light);font-size:18px;">&#128119;</div>
+          <div class="item-content"><div class="item-title">鑫达纺织厂</div><div class="item-desc">工人</div></div>
+          <div class="item-right arrow"></div>
+        </div>
+      </div>
+      <div class="section-title">设置</div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="list-item"><div class="item-icon" style="background:var(--coral-light);font-size:18px;">&#128276;</div><div class="item-content"><div class="item-title">消息通知</div></div><div class="item-right arrow"></div></div>
+        <div class="list-item"><div class="item-icon" style="background:var(--sky-light);font-size:18px;">&#128100;</div><div class="item-content"><div class="item-title">个人信息</div></div><div class="item-right arrow"></div></div>
+        <div class="list-item"><div class="item-icon" style="background:var(--plum-light);font-size:18px;">&#128172;</div><div class="item-content"><div class="item-title">意见反馈</div></div><div class="item-right arrow"></div></div>
+        <div class="list-item"><div class="item-icon" style="background:var(--cream);font-size:18px;">&#9432;</div><div class="item-content"><div class="item-title">关于计工宝</div></div><div class="item-right arrow"></div></div>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page-switcher button').forEach(b => b.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  const btn = document.getElementById('btn-' + id);
+  if (page) { page.classList.add('active'); page.style.animation = 'none'; page.offsetHeight; page.style.animation = ''; }
+  if (btn) btn.classList.add('active');
+}
+</script>
+</body>
+</html>
