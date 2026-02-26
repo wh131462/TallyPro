@@ -3,7 +3,39 @@
     "allow": [
       "Bash(rsvg-convert -w 512 -h 512 /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static/logo.svg -o /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static/logo.png)",
       "Bash(rsvg-convert -w 144 -h 144 /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static/logo.svg -o /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static/logo-144.png)",
-      "Bash(git fetch origin)"
+      "Bash(git fetch origin)",
+      "Bash(git filter-branch -f --env-filter ':*)",
+      "Bash(git stash)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter ':*)",
+      "Bash(git stash pop)",
+      "Bash(while read ref)",
+      "Bash(do git update-ref -d \"$ref\")",
+      "Bash(done)",
+      "Bash(git reflog expire --expire=now --all)",
+      "Bash(git gc --prune=now)",
+      "Bash(ls /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/pages/admin/*/index.vue /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/pages/worker/*/index.vue)",
+      "Bash(test -f /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/pages/admin/skus/index.vue)",
+      "Bash(npx tsc --noEmit -p packages/server/tsconfig.json)",
+      "Bash(pnpm -C packages/server type-check)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(pnpm -C packages/app type-check)",
+      "Bash(pnpm -C packages/server build)",
+      "Bash(pnpm -C packages/app build:h5)",
+      "Bash(pnpm -C packages/app add -D sass)",
+      "Bash(find packages/app/src -name \"*.vue\" -exec sed -i '' \"s/@import ''\\\\\\(.*theme\\\\.scss\\\\\\)'';/@use ''\\\\1'' as *;/g\" {} +)",
+      "Bash(node -e \"const vite = require\\(''./node_modules/.pnpm/vite@*/node_modules/vite/package.json''\\); console.log\\(''vite:'', vite.version\\)\")",
+      "Bash(pnpm -C packages/app ls sass sass-embedded vite)",
+      "Bash(node -e \"const d=require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\); const p=JSON.parse\\(d\\); console.log\\(''version:'', p.version\\); console.log\\(''peerDeps:'', JSON.stringify\\(p.peerDependencies||{}, null, 2\\)\\)\")",
+      "Bash(npx @dcloudio/uvm@latest)",
+      "Bash(npm view @dcloudio/uni-app versions --json)",
+      "Bash(node -e \"const v=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\)\\); console.log\\(''Latest 5 versions:''\\); v.slice\\(-5\\).forEach\\(x=>console.log\\(x\\)\\)\")",
+      "Bash(node -e \"const v=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\)\\); const stable=v.filter\\(x=>!x.includes\\(''alpha''\\)\\); console.log\\(''Latest stable versions:''\\); stable.slice\\(-10\\).forEach\\(x=>console.log\\(x\\)\\)\")",
+      "Bash(node -e \"const v=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\)\\); const stable=v.filter\\(x=>x.indexOf\\(''alpha''\\)===-1\\); console.log\\(''Latest stable versions:''\\); stable.slice\\(-10\\).forEach\\(x=>console.log\\(x\\)\\)\")",
+      "Bash(npm view @dcloudio/vite-plugin-uni@3.0.0-4080720251210001 peerDependencies --json)",
+      "Bash(npm view @dcloudio/vite-plugin-uni@3.0.0-alpha-5000120260211001 peerDependencies --json)"
+    ],
+    "additionalDirectories": [
+      "/Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static"
     ]
   }
 }
