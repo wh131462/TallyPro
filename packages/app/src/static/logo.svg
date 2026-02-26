@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- 更丰富的翡翠绿渐变 -->
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4ADE80"/>
+      <stop offset="50%" stop-color="#16A34A"/>
+      <stop offset="100%" stop-color="#166534"/>
+    </linearGradient>
+
+    <!-- 径向高光（左上角柔光） -->
+    <radialGradient id="highlight" cx="32%" cy="28%" r="62%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 底部微光 -->
+    <radialGradient id="bottomGlow" cx="50%" cy="85%" r="45%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 图标投影 -->
+    <filter id="iconShadow" x="-8%" y="-8%" width="116%" height="124%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#14532D" flood-opacity="0.28"/>
+    </filter>
+
+    <!-- 圆点柔光 -->
+    <filter id="dotGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 圆角背景 -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- 高光层 -->
+  <rect width="512" height="512" rx="112" fill="url(#highlight)"/>
+  <rect width="512" height="512" rx="112" fill="url(#bottomGlow)"/>
+
+  <!-- 精细内边框 -->
+  <rect x="3" y="3" width="506" height="506" rx="110" fill="none" stroke="white" stroke-opacity="0.1" stroke-width="1.5"/>
+
+  <!-- "工"字主体（带投影增加层次感） -->
+  <g filter="url(#iconShadow)">
+    <g stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" fill="none">
+      <!-- 顶横 -->
+      <line x1="116" y1="192" x2="396" y2="192"/>
+      <!-- 中竖 -->
+      <line x1="256" y1="192" x2="256" y2="386"/>
+      <!-- 底横 -->
+      <line x1="116" y1="386" x2="396" y2="386"/>
+    </g>
+  </g>
+
+  <!-- 三个计数圆点（微弧排列，中间略高，呼应"计数"与"宝冠"） -->
+  <g filter="url(#dotGlow)">
+    <circle cx="204" cy="114" r="14" fill="#FFFFFF"/>
+    <circle cx="256" cy="102" r="15" fill="#FFFFFF"/>
+    <circle cx="308" cy="114" r="14" fill="#FFFFFF"/>
+  </g>
+</svg>
