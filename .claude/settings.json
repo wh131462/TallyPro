@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rsvg-convert -w 512 -h 512 /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static/logo.svg -o /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static/logo.png)",
+      "Bash(rsvg-convert -w 144 -h 144 /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static/logo.svg -o /Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static/logo-144.png)",
+      "Bash(git fetch origin)"
+    ]
+  }
+}
