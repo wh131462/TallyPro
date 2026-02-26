@@ -1,0 +1,29 @@
+{
+  "name": "@tally-pro/server",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/app.ts",
+  "scripts": {
+    "dev": "tsx watch src/app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tally-pro/shared": "workspace:*",
+    "express": "^4.21.0",
+    "mysql2": "^3.11.0",
+    "sequelize": "^6.37.0",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.3.3"
+  }
+}
