@@ -1,0 +1,250 @@
+<template>
+  <view class="profile-page">
+    <!-- Profile Header -->
+    <view class="profile-header">
+      <view class="profile-avatar">
+        <image src="/static/icons/profile.svg" class="avatar-icon" />
+      </view>
+      <view class="profile-info">
+        <text class="profile-name">{{ userInfo?.nickname || '用户' }}</text>
+        <text class="profile-phone">{{ maskedPhone }}</text>
+      </view>
+    </view>
+
+    <!-- Workshop Switch -->
+    <text class="section-title">身份切换</text>
+    <view class="card" style="padding: 0; overflow: hidden;">
+      <view
+        class="list-item"
+        v-for="(ws, i) in workshops"
+        :key="i"
+        @tap="switchWorkshop(ws)"
+      >
+        <view class="icon-box" :style="{ background: ws.role === 'owner' ? 'rgba(200,149,108,0.12)' : '#E8F2EC' }">
+          <image :src="ws.role === 'owner' ? '/static/icons/factory.svg' : '/static/icons/worker.svg'" class="icon-img" />
+        </view>
+        <view class="item-content">
+          <text class="item-title">{{ ws.name }}</text>
+          <text class="item-desc">{{ ws.role === 'owner' ? '管理员 (主家)' : '工人' }}</text>
+        </view>
+        <text class="item-arrow">›</text>
+      </view>
+      <view v-if="workshops.length === 0" class="empty-ws">
+        <text class="empty-text">暂未加入任何工坊</text>
+      </view>
+    </view>
+
+    <!-- Settings -->
+    <text class="section-title">设置</text>
+    <view class="card" style="padding: 0; overflow: hidden;">
+      <view class="list-item" @tap="goTo('/pages/notifications/index')">
+        <view class="icon-box" style="background: #FFF0E8;">
+          <image src="/static/icons/bell.svg" class="icon-img" />
+        </view>
+        <view class="item-content">
+          <text class="item-title">消息通知</text>
+        </view>
+        <text class="item-arrow">›</text>
+      </view>
+      <view class="list-item" @tap="goTo('/pages/login/index')">
+        <view class="icon-box" style="background: #EBF2F8;">
+          <image src="/static/icons/profile.svg" class="icon-img" />
+        </view>
+        <view class="item-content">
+          <text class="item-title">个人信息</text>
+        </view>
+        <text class="item-arrow">›</text>
+      </view>
+      <view class="list-item">
+        <view class="icon-box" style="background: #F4EEF6;">
+          <image src="/static/icons/chat.svg" class="icon-img" />
+        </view>
+        <view class="item-content">
+          <text class="item-title">意见反馈</text>
+        </view>
+        <text class="item-arrow">›</text>
+      </view>
+      <view class="list-item">
+        <view class="icon-box" style="background: #EDE6DA;">
+          <image src="/static/icons/info.svg" class="icon-img" />
+        </view>
+        <view class="item-content">
+          <text class="item-title">关于计工宝</text>
+        </view>
+        <text class="item-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- Logout -->
+    <view style="padding: 40rpx 28rpx;">
+      <button class="btn-danger" @tap="logout">退出登录</button>
+    </view>
+
+    <view style="height: 40rpx;"></view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { api } from '../../utils/request';
+import { getUserInfo, setCurrentWorkshop, clearAll } from '../../utils/storage';
+import { removeToken } from '../../utils/request';
+
+const userInfo = ref(getUserInfo());
+
+interface WorkshopItem {
+  id: number;
+  name: string;
+  role: 'owner' | 'worker';
+}
+
+const workshops = ref<WorkshopItem[]>([]);
+
+const maskedPhone = computed(() => {
+  const phone = userInfo.value?.phone || '';
+  if (phone.length >= 11) {
+    return phone.slice(0, 3) + '****' + phone.slice(7);
+  }
+  return phone || '未绑定手机号';
+});
+
+function goTo(path: string) {
+  uni.navigateTo({ url: path });
+}
+
+function switchWorkshop(ws: WorkshopItem) {
+  setCurrentWorkshop({ id: ws.id, name: ws.name, role: ws.role });
+  if (ws.role === 'owner') {
+    uni.redirectTo({ url: '/pages/admin/dashboard/index' });
+  } else {
+    uni.redirectTo({ url: '/pages/worker/worklog/index' });
+  }
+}
+
+function logout() {
+  uni.showModal({
+    title: '确认退出',
+    content: '确定要退出登录吗？',
+    success(res) {
+      if (res.confirm) {
+        removeToken();
+        clearAll();
+        uni.reLaunch({ url: '/pages/welcome/index' });
+      }
+    },
+  });
+}
+
+onMounted(async () => {
+  try {
+    const res = await api.get<any>('/workshops');
+    const owned = (res.data?.owned || []).map((w: any) => ({
+      id: w.id,
+      name: w.name,
+      role: 'owner' as const,
+    }));
+    const joined = (res.data?.joined || []).map((w: any) => ({
+      id: w.id,
+      name: w.name,
+      role: 'worker' as const,
+    }));
+    workshops.value = [...owned, ...joined];
+  } catch {
+    // 加载失败时不显示任何工坊
+  }
+});
+</script>
+
+<style lang="scss" scoped>
+@use '../../static/styles/theme.scss' as *;
+
+.profile-page {
+  min-height: 100vh;
+  background: $cream;
+}
+
+.profile-header {
+  background: $surface;
+  padding: 56rpx 36rpx;
+  display: flex;
+  align-items: center;
+  gap: 36rpx;
+}
+
+.profile-avatar {
+  width: 136rpx;
+  height: 136rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.2), transparent),
+    linear-gradient(135deg, $amber 0%, $amber-deep 100%);
+  box-shadow: 0 8rpx 32rpx rgba(200,149,108,0.3);
+}
+
+.avatar-icon {
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-name {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: $ink;
+}
+
+.profile-phone {
+  display: block;
+  font-size: 26rpx;
+  color: $ink-faint;
+  margin-top: 6rpx;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  display: block;
+  font-size: 28rpx;
+  color: $ink;
+  font-weight: 600;
+}
+
+.item-desc {
+  display: block;
+  font-size: 24rpx;
+  color: $ink-faint;
+  margin-top: 4rpx;
+}
+
+.icon-img {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.item-arrow {
+  font-size: 36rpx;
+  color: $ink-faint;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.empty-ws {
+  padding: 40rpx;
+  text-align: center;
+}
+
+.empty-text {
+  font-size: 26rpx;
+  color: $ink-faint;
+}
+</style>
