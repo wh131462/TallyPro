@@ -1,14 +1,23 @@
 <template>
   <view class="profile-page">
+    <NavBar title="个人中心" />
+
     <!-- Profile Header -->
-    <view class="profile-header">
+    <view class="profile-header" @tap="goTo('/pages/login/index')">
       <view class="profile-avatar">
-        <image src="/static/icons/profile.svg" class="avatar-icon" />
+        <image
+          v-if="userInfo?.avatar_url"
+          :src="getImageUrl(userInfo.avatar_url)"
+          class="avatar-img"
+          mode="aspectFill"
+        />
+        <image v-else src="/static/icons/profile.svg" class="avatar-icon" />
       </view>
       <view class="profile-info">
         <text class="profile-name">{{ userInfo?.nickname || '用户' }}</text>
-        <text class="profile-phone">{{ maskedPhone }}</text>
+        <text class="profile-id">ID: {{ userInfo?.id || '-' }}</text>
       </view>
+      <text class="item-arrow">›</text>
     </view>
 
     <!-- Workshop Switch -->
@@ -25,12 +34,25 @@
         </view>
         <view class="item-content">
           <text class="item-title">{{ ws.name }}</text>
-          <text class="item-desc">{{ ws.role === 'owner' ? '管理员 (主家)' : '工人' }}</text>
+          <text class="item-desc">{{ ws.role === 'owner' ? '管理员 (企业主)' : ws.isOwnerWorkerMode ? '员工模式 · 记工填报' : '员工' }}</text>
         </view>
-        <text class="item-arrow">›</text>
+        <view v-if="!ws.isOwnerWorkerMode" class="ws-remove-btn" @tap.stop="onRemoveWs(ws)">
+          <text class="ws-remove-icon">&times;</text>
+        </view>
       </view>
       <view v-if="workshops.length === 0" class="empty-ws">
-        <text class="empty-text">暂未加入任何工坊</text>
+        <text class="empty-text">暂未加入任何企业</text>
+      </view>
+      <!-- 添加身份入口 -->
+      <view class="list-item add-identity-item" @tap="goTo('/pages/role-select/index?mode=add')">
+        <view class="icon-box" style="background: rgba(200,149,108,0.08);">
+          <text class="add-icon">+</text>
+        </view>
+        <view class="item-content">
+          <text class="item-title" style="color: rgba(200,149,108,1);">添加新身份</text>
+          <text class="item-desc">创建企业或加入其他企业</text>
+        </view>
+        <text class="item-arrow">›</text>
       </view>
     </view>
 
@@ -46,16 +68,7 @@
         </view>
         <text class="item-arrow">›</text>
       </view>
-      <view class="list-item" @tap="goTo('/pages/login/index')">
-        <view class="icon-box" style="background: #EBF2F8;">
-          <image src="/static/icons/profile.svg" class="icon-img" />
-        </view>
-        <view class="item-content">
-          <text class="item-title">个人信息</text>
-        </view>
-        <text class="item-arrow">›</text>
-      </view>
-      <view class="list-item">
+      <view class="list-item" @tap="goTo('/pages/feedback/index')">
         <view class="icon-box" style="background: #F4EEF6;">
           <image src="/static/icons/chat.svg" class="icon-img" />
         </view>
@@ -64,7 +77,7 @@
         </view>
         <text class="item-arrow">›</text>
       </view>
-      <view class="list-item">
+      <view class="list-item" @tap="goTo('/pages/about/index')">
         <view class="icon-box" style="background: #EDE6DA;">
           <image src="/static/icons/info.svg" class="icon-img" />
         </view>
@@ -80,33 +93,34 @@
       <button class="btn-danger" @tap="logout">退出登录</button>
     </view>
 
-    <view style="height: 40rpx;"></view>
+    <!-- Bottom spacer for TabBar -->
+    <view class="tab-bar-clearance"></view>
+
+    <TabBar :role="currentRole" current="/pages/profile/index" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { api } from '../../utils/request';
-import { getUserInfo, setCurrentWorkshop, clearAll } from '../../utils/storage';
+import { ref, computed } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
+import { api, getImageUrl } from '../../utils/request';
+import { getUserInfo, setCurrentWorkshop, getCurrentWorkshop, clearAll } from '../../utils/storage';
 import { removeToken } from '../../utils/request';
+import NavBar from '../../components/NavBar.vue';
+import TabBar from '../../components/TabBar.vue';
 
 const userInfo = ref(getUserInfo());
+const workshop = getCurrentWorkshop();
+const currentRole = computed(() => workshop?.role === 'owner' ? 'admin' : 'worker');
 
 interface WorkshopItem {
   id: number;
   name: string;
   role: 'owner' | 'worker';
+  isOwnerWorkerMode?: boolean;
 }
 
 const workshops = ref<WorkshopItem[]>([]);
-
-const maskedPhone = computed(() => {
-  const phone = userInfo.value?.phone || '';
-  if (phone.length >= 11) {
-    return phone.slice(0, 3) + '****' + phone.slice(7);
-  }
-  return phone || '未绑定手机号';
-});
 
 function goTo(path: string) {
   uni.navigateTo({ url: path });
@@ -118,6 +132,52 @@ function switchWorkshop(ws: WorkshopItem) {
     uni.redirectTo({ url: '/pages/admin/dashboard/index' });
   } else {
     uni.redirectTo({ url: '/pages/worker/worklog/index' });
+  }
+}
+
+function onRemoveWs(ws: WorkshopItem) {
+  if (ws.role === 'owner') {
+    uni.showModal({
+      title: '解散企业',
+      content: `确定要解散「${ws.name}」吗？解散后所有员工将被移除。`,
+      confirmColor: '#C75B5B',
+      success(res) {
+        if (res.confirm) {
+          doRemoveOwnerWorkshop(ws);
+        }
+      },
+    });
+  } else {
+    uni.showModal({
+      title: '退出企业',
+      content: `确定要退出「${ws.name}」吗？退出后需要重新申请加入。`,
+      confirmColor: '#C75B5B',
+      success(res) {
+        if (res.confirm) {
+          doLeaveWorkshop(ws);
+        }
+      },
+    });
+  }
+}
+
+async function doLeaveWorkshop(ws: WorkshopItem) {
+  try {
+    await api.post(`/workshops/${ws.id}/leave`, {} as any);
+    uni.showToast({ title: '已退出企业', icon: 'success' });
+    loadWorkshops();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function doRemoveOwnerWorkshop(ws: WorkshopItem) {
+  try {
+    await api.put(`/workshops/${ws.id}`, { status: 'inactive' } as any);
+    uni.showToast({ title: '已解散企业', icon: 'success' });
+    loadWorkshops();
+  } catch (e) {
+    console.error(e);
   }
 }
 
@@ -135,23 +195,29 @@ function logout() {
   });
 }
 
-onMounted(async () => {
+async function loadWorkshops() {
   try {
     const res = await api.get<any>('/workshops');
-    const owned = (res.data?.owned || []).map((w: any) => ({
-      id: w.id,
-      name: w.name,
-      role: 'owner' as const,
-    }));
-    const joined = (res.data?.joined || []).map((w: any) => ({
-      id: w.id,
-      name: w.name,
-      role: 'worker' as const,
-    }));
+    const owned = (res.data?.owned || []).flatMap((w: any) => [
+      { id: w.id, name: w.name, role: 'owner' as const },
+      { id: w.id, name: w.name, role: 'worker' as const, isOwnerWorkerMode: true },
+    ]);
+    const joined = (res.data?.joined || [])
+      .filter((w: any) => w.member_status !== 'pending')
+      .map((w: any) => ({
+        id: w.id,
+        name: w.name,
+        role: 'worker' as const,
+      }));
     workshops.value = [...owned, ...joined];
   } catch {
-    // 加载失败时不显示任何工坊
+    // 加载失败时不显示任何企业
   }
+}
+
+onShow(() => {
+  userInfo.value = getUserInfo();
+  loadWorkshops();
 });
 </script>
 
@@ -182,6 +248,12 @@ onMounted(async () => {
     radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.2), transparent),
     linear-gradient(135deg, $amber 0%, $amber-deep 100%);
   box-shadow: 0 8rpx 32rpx rgba(200,149,108,0.3);
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 136rpx;
+  height: 136rpx;
 }
 
 .avatar-icon {
@@ -200,7 +272,7 @@ onMounted(async () => {
   color: $ink;
 }
 
-.profile-phone {
+.profile-id {
   display: block;
   font-size: 26rpx;
   color: $ink-faint;
@@ -246,5 +318,33 @@ onMounted(async () => {
 .empty-text {
   font-size: 26rpx;
   color: $ink-faint;
+}
+
+.add-identity-item {
+  border-top: 1rpx solid $cream-deep;
+}
+
+.add-icon {
+  font-size: 40rpx;
+  font-weight: 300;
+  color: $amber;
+  line-height: 1;
+}
+
+.ws-remove-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 8rpx;
+}
+
+.ws-remove-icon {
+  font-size: 36rpx;
+  color: $ink-faint;
+  line-height: 1;
 }
 </style>

@@ -1,33 +1,56 @@
 <template>
   <view class="notifications-page">
-    <scroll-view scroll-y class="notifications-scroll safe-bottom">
+    <scroll-view
+      scroll-y
+      class="notifications-scroll safe-bottom"
+      @scrolltolower="loadMore"
+      refresher-enabled
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onRefresh"
+    >
+      <!-- Mark all read -->
+      <view v-if="hasUnread" class="read-all-bar">
+        <text class="read-all-btn" @tap="markAllRead">全部已读</text>
+      </view>
+
       <!-- Notification Groups -->
       <view v-for="(group, gIdx) in groupedNotifications" :key="gIdx">
         <text class="section-title">{{ group.date }}</text>
         <view class="notification-group">
           <view
-            v-for="(item, idx) in group.items"
-            :key="idx"
+            v-for="item in group.items"
+            :key="item.id"
             class="notification-item"
-            :class="{ unread: !item.read }"
+            :class="{ unread: !item.is_read }"
+            @tap="markRead(item)"
           >
-            <view class="ni-icon-wrap" :style="{ background: item.iconBg }">
-              <text class="ni-icon">{{ item.icon }}</text>
+            <view class="ni-icon-wrap" :style="{ background: getIconStyle(item.type).bg }">
+              <text class="ni-icon">{{ getIconStyle(item.type).icon }}</text>
             </view>
             <view class="ni-content">
               <view class="ni-header">
                 <text class="ni-title">{{ item.title }}</text>
-                <view v-if="!item.read" class="ni-dot"></view>
+                <view v-if="!item.is_read" class="ni-dot"></view>
               </view>
-              <text class="ni-desc">{{ item.description }}</text>
-              <text class="ni-time">{{ item.time }}</text>
+              <text class="ni-desc">{{ item.content }}</text>
+              <text class="ni-time">{{ formatTime(item.created_at) }}</text>
             </view>
           </view>
         </view>
       </view>
 
+      <!-- Loading more -->
+      <view v-if="loading && notifications.length > 0" class="loading-more">
+        <text class="loading-text">加载中...</text>
+      </view>
+
+      <!-- No more -->
+      <view v-if="noMore && notifications.length > 0" class="loading-more">
+        <text class="loading-text">没有更多了</text>
+      </view>
+
       <!-- Empty State -->
-      <view v-if="groupedNotifications.length === 0" class="empty-state">
+      <view v-if="!loading && notifications.length === 0" class="empty-state">
         <image src="/static/icons/bell.svg" class="empty-icon" />
         <text class="empty-text">暂无通知</text>
         <text class="empty-hint">有新的消息时会在这里通知你</text>
@@ -40,82 +63,60 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
+import { api } from '../../utils/request';
 import { formatDate, getToday } from '../../utils/date';
 
 interface NotificationItem {
-  icon: string;
-  iconBg: string;
+  id: number;
+  user_id: number;
+  workshop_id: number;
+  type: string;
   title: string;
-  description: string;
-  time: string;
-  date: string;
-  read: boolean;
+  content: string;
+  is_read: boolean;
+  created_at: string;
 }
 
-const notifications = ref<NotificationItem[]>([
-  {
-    icon: '\uD83D\uDCCB',
-    iconBg: 'rgba(212,132,90,0.12)',
-    title: '新记录待审核',
-    description: '张三提交了 3 条新的记工记录，请及时审核',
-    time: '15:30',
-    date: getToday(),
-    read: false,
-  },
-  {
-    icon: '\uD83D\uDC64',
-    iconBg: 'rgba(139,107,150,0.12)',
-    title: '新成员申请',
-    description: '赵六申请加入工坊，请审批',
-    time: '14:20',
-    date: getToday(),
-    read: false,
-  },
-  {
-    icon: '\u2713',
-    iconBg: 'rgba(107,155,123,0.12)',
-    title: '结算单已确认',
-    description: '张三已确认 2 月上半月结算单，金额 ¥1,280',
-    time: '11:00',
-    date: getToday(),
-    read: true,
-  },
-  {
-    icon: '\u270E',
-    iconBg: 'rgba(91,141,184,0.12)',
-    title: '记录被修改',
-    description: '管理员将你的衬衫缝合数量从 15 修改为 12',
-    time: '16:45',
-    date: formatDate(new Date(Date.now() - 86400000)),
-    read: true,
-  },
-  {
-    icon: '\uD83D\uDCB0',
-    iconBg: 'rgba(200,149,108,0.12)',
-    title: '结算单已生成',
-    description: '1 月下半月结算单已生成，总额 ¥1,440，请查看确认',
-    time: '09:30',
-    date: formatDate(new Date(Date.now() - 86400000)),
-    read: true,
-  },
-  {
-    icon: '\uD83C\uDF89',
-    iconBg: 'rgba(200,149,108,0.12)',
-    title: '欢迎使用计工宝',
-    description: '你已成功创建工坊，快去邀请工人加入吧',
-    time: '10:00',
-    date: formatDate(new Date(Date.now() - 172800000)),
-    read: true,
-  },
-]);
+const notifications = ref<NotificationItem[]>([]);
+const loading = ref(false);
+const refreshing = ref(false);
+const page = ref(1);
+const pageSize = 20;
+const total = ref(0);
+
+const hasUnread = computed(() => notifications.value.some((n) => !n.is_read));
+const noMore = computed(() => notifications.value.length >= total.value && total.value > 0);
+
+const iconStyleMap: Record<string, { icon: string; bg: string }> = {
+  member_apply: { icon: '\uD83D\uDC64', bg: 'rgba(139,107,150,0.12)' },
+  member_approved: { icon: '\u2713', bg: 'rgba(107,155,123,0.12)' },
+  member_rejected: { icon: '\u2717', bg: 'rgba(200,100,100,0.12)' },
+  member_removed: { icon: '\uD83D\uDEAB', bg: 'rgba(200,100,100,0.12)' },
+  record_submitted: { icon: '\uD83D\uDCCB', bg: 'rgba(212,132,90,0.12)' },
+  record_confirmed: { icon: '\u2713', bg: 'rgba(107,155,123,0.12)' },
+  record_modified: { icon: '\u270E', bg: 'rgba(91,141,184,0.12)' },
+  settlement_created: { icon: '\uD83D\uDCB0', bg: 'rgba(200,149,108,0.12)' },
+  settlement_confirmed: { icon: '\u2713', bg: 'rgba(107,155,123,0.12)' },
+};
+
+function getIconStyle(type: string) {
+  return iconStyleMap[type] || { icon: '\uD83D\uDD14', bg: 'rgba(150,150,150,0.12)' };
+}
+
+function formatTime(dateStr: string) {
+  const d = new Date(dateStr);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
 
 function getDateLabel(dateStr: string): string {
+  const date = formatDate(dateStr);
   const today = getToday();
-  if (dateStr === today) return '今天';
+  if (date === today) return '今天';
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  if (dateStr === formatDate(yesterday)) return '昨天';
-  return dateStr;
+  if (date === formatDate(yesterday)) return '昨天';
+  return date;
 }
 
 const groupedNotifications = computed(() => {
@@ -123,17 +124,74 @@ const groupedNotifications = computed(() => {
   const dateMap = new Map<string, NotificationItem[]>();
 
   for (const item of notifications.value) {
-    const existing = dateMap.get(item.date);
+    const dateKey = formatDate(item.created_at);
+    const existing = dateMap.get(dateKey);
     if (existing) {
       existing.push(item);
     } else {
       const items = [item];
-      dateMap.set(item.date, items);
-      groups.push({ date: getDateLabel(item.date), items });
+      dateMap.set(dateKey, items);
+      groups.push({ date: getDateLabel(item.created_at), items });
     }
   }
 
   return groups;
+});
+
+async function fetchNotifications(pageNum: number, append = false) {
+  if (loading.value) return;
+  loading.value = true;
+  try {
+    const res = await api.get<{ total: number; list: NotificationItem[] }>('/notifications', {
+      page: pageNum,
+      page_size: pageSize,
+    } as Record<string, unknown>);
+    total.value = res.data.total;
+    if (append) {
+      notifications.value = [...notifications.value, ...res.data.list];
+    } else {
+      notifications.value = res.data.list;
+    }
+    page.value = pageNum;
+  } catch {
+    // error handled by request util
+  } finally {
+    loading.value = false;
+  }
+}
+
+function loadMore() {
+  if (noMore.value || loading.value) return;
+  fetchNotifications(page.value + 1, true);
+}
+
+async function onRefresh() {
+  refreshing.value = true;
+  await fetchNotifications(1, false);
+  refreshing.value = false;
+}
+
+async function markRead(item: NotificationItem) {
+  if (item.is_read) return;
+  try {
+    await api.put(`/notifications/${item.id}/read`);
+    item.is_read = true;
+  } catch {
+    // silent
+  }
+}
+
+async function markAllRead() {
+  try {
+    await api.put('/notifications/read-all');
+    notifications.value.forEach((n) => (n.is_read = true));
+  } catch {
+    // silent
+  }
+}
+
+onShow(() => {
+  fetchNotifications(1, false);
 });
 </script>
 
@@ -147,6 +205,21 @@ const groupedNotifications = computed(() => {
 
 .notifications-scroll {
   height: 100vh;
+}
+
+// Read All Bar
+.read-all-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16rpx 32rpx 0;
+}
+
+.read-all-btn {
+  font-size: 24rpx;
+  color: $amber-deep;
+  padding: 8rpx 24rpx;
+  background: $amber-surface;
+  border-radius: 20rpx;
 }
 
 // Notification Group
@@ -225,6 +298,17 @@ const groupedNotifications = computed(() => {
 .ni-time {
   display: block;
   font-size: 22rpx;
+  color: $ink-faint;
+}
+
+// Loading
+.loading-more {
+  text-align: center;
+  padding: 24rpx 0;
+}
+
+.loading-text {
+  font-size: 24rpx;
   color: $ink-faint;
 }
 
