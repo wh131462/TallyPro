@@ -71,7 +71,7 @@
 import { ref, computed, onMounted } from 'vue';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
-import { api } from '../../../utils/request';
+import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 
 interface RecordItem {
@@ -119,8 +119,9 @@ const groupedRecords = computed<DateGroup[]>(() => {
 });
 
 function getSkuIcon(icon?: string): string {
-  if (icon) return `/static/icons/${icon}.svg`;
-  return '/static/icons/trousers.svg';
+  if (!icon) return '/static/icons/trousers.svg';
+  if (icon.startsWith('/uploads/') || icon.startsWith('http')) return getImageUrl(icon);
+  return `/static/icons/${icon}.svg`;
 }
 
 function getBadgeClass(status: string): string {

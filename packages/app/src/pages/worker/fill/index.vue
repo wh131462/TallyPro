@@ -169,7 +169,12 @@ onLoad(async (query: Record<string, string> | undefined) => {
   if (skuId.value) {
     try {
       const res = await api.get<any>(`/skus/${skuId.value}/steps`);
-      const list = res.data || [];
+      const data = res.data || {};
+      const list = data.steps || data || [];
+      // Use SKU name from API response if not passed via query
+      if (data.sku_name && skuName.value === '---') {
+        skuName.value = data.sku_name;
+      }
       steps.value = (Array.isArray(list) ? list : []).map((s: any) => ({
         id: s.id,
         name: s.name,

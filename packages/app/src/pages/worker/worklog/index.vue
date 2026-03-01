@@ -4,7 +4,13 @@
 
       <!-- Workshop Selector -->
       <view class="workshop-bar" @tap="switchWorkshop">
-        <image src="/static/icons/factory.svg" class="ws-bar-icon" />
+        <image
+          v-if="workshopLogo"
+          :src="getImageUrl(workshopLogo)"
+          class="ws-bar-logo"
+          mode="aspectFill"
+        />
+        <image v-else src="/static/icons/factory.svg" class="ws-bar-icon" />
         <text class="ws-bar-name">{{ workshopName }}</text>
         <text class="ws-bar-arrow">&#9662;</text>
       </view>
@@ -28,7 +34,7 @@
         v-for="item in frequentSteps"
         :key="'freq-' + item.id"
         class="sku-card sku-card-sm"
-        @tap="goFill(item.skuId)"
+        @tap="goFill(item.skuId, item.skuName)"
       >
         <view class="sku-img sku-img-sm">
           <image :src="getSkuIcon(item.icon)" class="sku-icon" />
@@ -48,7 +54,7 @@
         v-for="sku in skuList"
         :key="'sku-' + sku.id"
         class="sku-card"
-        @tap="goFill(sku.id)"
+        @tap="goFill(sku.id, sku.name)"
       >
         <view class="sku-img">
           <image :src="getSkuIcon(sku.icon)" class="sku-icon" />
@@ -77,7 +83,7 @@ import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
-import { api } from '../../../utils/request';
+import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop, setCurrentWorkshop } from '../../../utils/storage';
 import { formatDate, getToday, addDays, isToday } from '../../../utils/date';
 
@@ -101,10 +107,12 @@ const currentDate = ref(getToday());
 const frequentSteps = ref<FrequentStep[]>([]);
 const skuList = ref<SkuItem[]>([]);
 const workshopName = ref('');
+const workshopLogo = ref('');
 
 interface JoinedWorkshop {
   id: number;
   name: string;
+  logo_url?: string;
 }
 const joinedWorkshops = ref<JoinedWorkshop[]>([]);
 
@@ -122,13 +130,15 @@ function nextDay() {
 }
 
 function getSkuIcon(icon?: string): string {
-  if (icon) return `/static/icons/${icon}.svg`;
-  return '/static/icons/trousers.svg';
+  if (!icon) return '/static/icons/trousers.svg';
+  if (icon.startsWith('/uploads/') || icon.startsWith('http')) return getImageUrl(icon);
+  return `/static/icons/${icon}.svg`;
 }
 
-function goFill(skuId: number) {
+function goFill(skuId: number, name?: string) {
+  const skuName = encodeURIComponent(name || '');
   uni.navigateTo({
-    url: `/pages/worker/fill/index?skuId=${skuId}&date=${currentDate.value}`,
+    url: `/pages/worker/fill/index?skuId=${skuId}&skuName=${skuName}&date=${currentDate.value}`,
   });
 }
 
@@ -137,7 +147,7 @@ async function loadWorkshops() {
     const res = await api.get<any>('/workshops');
     const owned = res.data?.owned || [];
     const joined = (res.data?.joined || []).filter((w: any) => w.member_status === 'approved');
-    joinedWorkshops.value = [...owned, ...joined].map((w: any) => ({ id: w.id, name: w.name }));
+    joinedWorkshops.value = [...owned, ...joined].map((w: any) => ({ id: w.id, name: w.name, logo_url: w.logo_url || '' }));
   } catch {
     // ignore
   }
@@ -152,8 +162,9 @@ function switchWorkshop() {
     success(res) {
       const selected = joinedWorkshops.value[res.tapIndex];
       if (selected && selected.id !== workshop?.id) {
-        setCurrentWorkshop({ id: selected.id, name: selected.name, role: 'worker' });
+        setCurrentWorkshop({ id: selected.id, name: selected.name, role: 'worker', logo_url: selected.logo_url });
         workshopName.value = selected.name;
+        workshopLogo.value = selected.logo_url || '';
         loadSkus();
       }
     },
@@ -167,12 +178,14 @@ async function loadSkus() {
   try {
     const res = await api.get<any>(`/workshops/${workshop.id}/skus`);
     const list = res.data || [];
-    skuList.value = (Array.isArray(list) ? list : []).map((s: any) => ({
-      id: s.id,
-      name: s.name,
-      stepCount: s.steps?.length || 0,
-      icon: s.image_url || undefined,
-    }));
+    skuList.value = (Array.isArray(list) ? list : [])
+      .filter((s: any) => s.is_active !== false)
+      .map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        stepCount: s.steps?.length || 0,
+        icon: s.image_url || undefined,
+      }));
   } catch (e) {
     console.error('加载产品列表失败', e);
   }
@@ -182,6 +195,7 @@ onShow(() => {
   const workshop = getCurrentWorkshop();
   if (workshop) {
     workshopName.value = workshop.name;
+    workshopLogo.value = workshop.logo_url || '';
   }
   loadSkus();
   loadWorkshops();
@@ -209,6 +223,13 @@ onShow(() => {
 .ws-bar-icon {
   width: 36rpx;
   height: 36rpx;
+}
+
+.ws-bar-logo {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .ws-bar-name {
