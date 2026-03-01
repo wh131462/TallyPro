@@ -6,29 +6,29 @@
         <view class="header-icon-wrap">
           <image src="/static/icons/factory.svg" class="header-icon" />
         </view>
-        <text class="header-title">创建你的工坊</text>
-        <text class="header-desc">创建工坊后，可以邀请工人加入并开始记工</text>
+        <text class="header-title">创建你的企业</text>
+        <text class="header-desc">创建企业后，可以邀请员工加入并开始记工</text>
       </view>
 
       <!-- Form Card -->
       <view class="card">
         <view class="form-group">
-          <text class="form-label">工坊名称</text>
+          <text class="form-label">企业名称</text>
           <input
             class="form-input"
             v-model="form.name"
-            placeholder="例如：锦绣服装加工坊"
+            placeholder="例如：锦绣服装加企业"
             maxlength="20"
           />
           <text class="form-hint">{{ form.name.length }}/20</text>
         </view>
 
         <view class="form-group">
-          <text class="form-label">工坊简介（选填）</text>
+          <text class="form-label">企业简介（选填）</text>
           <textarea
             class="form-input form-textarea"
             v-model="form.description"
-            placeholder="简要描述工坊的主营业务"
+            placeholder="简要描述企业的主营业务"
             maxlength="100"
           />
           <text class="form-hint">{{ form.description.length }}/100</text>
@@ -39,11 +39,11 @@
       <view class="tips-card">
         <view class="tip-item">
           <image src="/static/icons/check.svg" class="tip-icon" />
-          <text class="tip-text">创建后可随时修改工坊信息</text>
+          <text class="tip-text">创建后可随时修改企业信息</text>
         </view>
         <view class="tip-item">
           <image src="/static/icons/check.svg" class="tip-icon" />
-          <text class="tip-text">生成邀请码让工人快速加入</text>
+          <text class="tip-text">生成邀请码让员工快速加入</text>
         </view>
         <view class="tip-item">
           <image src="/static/icons/check.svg" class="tip-icon" />
@@ -62,7 +62,7 @@
         :disabled="!canSubmit || submitting"
         @tap="handleCreate"
       >
-        {{ submitting ? '创建中...' : '创建工坊' }}
+        {{ submitting ? '创建中...' : '创建企业' }}
       </button>
     </view>
   </view>

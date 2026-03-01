@@ -1,7 +1,7 @@
 <template>
   <view class="role-page">
     <view class="role-hint">
-      <text class="role-hint-text">请选择您的身份进入</text>
+      <text class="role-hint-text">{{ isAddMode ? '选择要添加的身份' : '请选择您的身份进入' }}</text>
     </view>
     <view class="role-cards">
       <view class="role-card" @tap="selectRole('admin')">
@@ -9,8 +9,8 @@
           <image src="/static/icons/factory.svg" class="role-icon-img" />
         </view>
         <view class="role-text">
-          <text class="role-name">我是主家</text>
-          <text class="role-desc">管理工坊、设置产品工序、审核记录、结算工资</text>
+          <text class="role-name">我是企业主</text>
+          <text class="role-desc">管理企业、设置产品工序、审核记录、结算工资</text>
         </view>
         <text class="role-arrow">›</text>
       </view>
@@ -19,8 +19,8 @@
           <image src="/static/icons/worker.svg" class="role-icon-img" />
         </view>
         <view class="role-text">
-          <text class="role-name">我是工人</text>
-          <text class="role-desc">绑定工坊、每日填报工量、查看工资明细</text>
+          <text class="role-name">我是员工</text>
+          <text class="role-desc">绑定企业、每日填报工量、查看工资明细</text>
         </view>
         <text class="role-arrow">›</text>
       </view>
@@ -29,26 +29,67 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { api } from '../../utils/request';
 import { setCurrentWorkshop } from '../../utils/storage';
 
+const isAddMode = ref(false);
+
+onMounted(() => {
+  const pages = getCurrentPages();
+  const currentPage = pages[pages.length - 1] as any;
+  const options = currentPage?.$page?.options || currentPage?.options || {};
+  isAddMode.value = options.mode === 'add';
+});
+
+function enterWorkshop(ws: { id: number; name: string }, role: 'owner' | 'worker') {
+  setCurrentWorkshop({ id: ws.id, name: ws.name, role });
+  if (role === 'owner') {
+    uni.redirectTo({ url: '/pages/admin/dashboard/index' });
+  } else {
+    uni.redirectTo({ url: '/pages/worker/worklog/index' });
+  }
+}
+
+function pickAndEnter(list: { id: number; name: string }[], role: 'owner' | 'worker') {
+  if (list.length === 1) {
+    enterWorkshop(list[0], role);
+    return;
+  }
+  uni.showActionSheet({
+    itemList: list.map((w) => w.name),
+    success(res) {
+      enterWorkshop(list[res.tapIndex], role);
+    },
+  });
+}
+
 async function selectRole(role: 'admin' | 'worker') {
+  // 添加新身份模式：始终走创建/加入流程
+  if (isAddMode.value) {
+    if (role === 'admin') {
+      uni.navigateTo({ url: '/pages/create-workshop/index' });
+    } else {
+      uni.navigateTo({ url: '/pages/worker/bind/index' });
+    }
+    return;
+  }
+
   try {
     const res = await api.get<any>('/workshops');
     const owned = res.data?.owned || [];
-    const joined = res.data?.joined || [];
+    const joined = (res.data?.joined || []).filter((w: any) => w.member_status === 'approved');
 
     if (role === 'admin') {
       if (owned.length > 0) {
-        setCurrentWorkshop({ id: owned[0].id, name: owned[0].name, role: 'owner' });
-        uni.redirectTo({ url: '/pages/admin/dashboard/index' });
+        pickAndEnter(owned, 'owner');
       } else {
         uni.navigateTo({ url: '/pages/create-workshop/index' });
       }
     } else {
-      if (joined.length > 0) {
-        setCurrentWorkshop({ id: joined[0].id, name: joined[0].name, role: 'worker' });
-        uni.redirectTo({ url: '/pages/worker/worklog/index' });
+      const workerList = [...joined, ...owned];
+      if (workerList.length > 0) {
+        pickAndEnter(workerList, 'worker');
       } else {
         uni.navigateTo({ url: '/pages/worker/bind/index' });
       }
