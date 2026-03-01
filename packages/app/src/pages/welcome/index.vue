@@ -323,8 +323,8 @@ async function mockLogin() {
 }
 
 .wx-icon {
-  width: 52rpx;
-  height: 52rpx;
+  width: 44rpx;
+  height: 44rpx;
   flex-shrink: 0;
 }
 

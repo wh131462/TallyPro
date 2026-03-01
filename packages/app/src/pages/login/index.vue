@@ -135,11 +135,12 @@ async function saveProfile() {
   width: 52rpx;
   height: 52rpx;
   border-radius: 50%;
-  background: $ink;
+  background: $amber;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 4rpx solid $surface;
+  box-shadow: 0 4rpx 12rpx rgba(200, 149, 108, 0.4);
 }
 
 .avatar-badge-icon {

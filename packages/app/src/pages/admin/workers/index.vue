@@ -463,6 +463,7 @@ onMounted(() => {
 .btn-add-icon {
   width: 36rpx;
   height: 36rpx;
+  flex-shrink: 0;
 }
 
 .btn-add-text {

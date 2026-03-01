@@ -708,6 +708,7 @@ onMounted(() => {
 .btn-batch-icon {
   width: 36rpx;
   height: 36rpx;
+  flex-shrink: 0;
 }
 
 .btn-batch-text {

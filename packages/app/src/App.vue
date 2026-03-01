@@ -52,8 +52,9 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12rpx;
   width: 100%;
-  padding: 24rpx 0;
+  height: 88rpx;
   border-radius: $radius-sm;
   font-size: 28rpx;
   font-weight: 600;
@@ -61,14 +62,19 @@ page {
   color: #fff;
   border: none;
   letter-spacing: 1rpx;
+
+  &::after {
+    display: none;
+  }
 }
 
 .btn-outline {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12rpx;
   width: 100%;
-  padding: 24rpx 0;
+  height: 88rpx;
   border-radius: $radius-sm;
   font-size: 28rpx;
   font-weight: 600;
@@ -76,37 +82,52 @@ page {
   color: $amber;
   border: 3rpx solid $amber-light;
   letter-spacing: 1rpx;
+
+  &::after {
+    display: none;
+  }
 }
 
 .btn-success {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24rpx 0;
+  gap: 12rpx;
+  height: 88rpx;
   border-radius: $radius-sm;
   font-size: 28rpx;
   font-weight: 600;
   background: linear-gradient(135deg, $sage 0%, #5A8A6A 100%);
   color: #fff;
   border: none;
+
+  &::after {
+    display: none;
+  }
 }
 
 .btn-danger {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12rpx;
   width: 100%;
-  padding: 24rpx 0;
+  height: 88rpx;
   border-radius: $radius-sm;
   font-size: 28rpx;
   font-weight: 600;
   background: $surface;
   color: $danger;
   border: 3rpx solid $danger;
+
+  &::after {
+    display: none;
+  }
 }
 
 .btn-sm {
   padding: 14rpx 28rpx;
+  height: auto;
   font-size: 24rpx;
   width: auto;
   border-radius: 16rpx;

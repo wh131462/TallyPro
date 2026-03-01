@@ -365,6 +365,8 @@ onShow(() => {
 .btn-add-icon {
   width: 36rpx;
   height: 36rpx;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
 }
 
 .btn-add-text {

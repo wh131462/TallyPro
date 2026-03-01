@@ -373,7 +373,8 @@ onMounted(async () => {
 }
 
 .export-icon {
-  width: 32rpx;
-  height: 32rpx;
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
 }
 </style>
