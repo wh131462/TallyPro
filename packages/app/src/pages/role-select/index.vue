@@ -42,8 +42,8 @@ onMounted(() => {
   isAddMode.value = options.mode === 'add';
 });
 
-function enterWorkshop(ws: { id: number; name: string }, role: 'owner' | 'worker') {
-  setCurrentWorkshop({ id: ws.id, name: ws.name, role });
+function enterWorkshop(ws: { id: number; name: string; logo_url?: string }, role: 'owner' | 'worker') {
+  setCurrentWorkshop({ id: ws.id, name: ws.name, role, logo_url: ws.logo_url });
   if (role === 'owner') {
     uni.redirectTo({ url: '/pages/admin/dashboard/index' });
   } else {
@@ -51,7 +51,7 @@ function enterWorkshop(ws: { id: number; name: string }, role: 'owner' | 'worker
   }
 }
 
-function pickAndEnter(list: { id: number; name: string }[], role: 'owner' | 'worker') {
+function pickAndEnter(list: { id: number; name: string; logo_url?: string }[], role: 'owner' | 'worker') {
   if (list.length === 1) {
     enterWorkshop(list[0], role);
     return;

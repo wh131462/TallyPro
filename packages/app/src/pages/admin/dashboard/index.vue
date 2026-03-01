@@ -4,8 +4,16 @@
 
       <!-- Header -->
       <view class="dash-header">
-        <text class="greeting">{{ greetingText }}，{{ userName??"用户" }}</text>
-        <text class="workshop-name">{{ workshopDisplayName }}</text>
+        <view class="dash-header-top" @tap="goTo('/pages/admin/workshop/index')">
+          <view class="dash-logo" v-if="workshopLogo">
+            <image :src="getImageUrl(workshopLogo)" class="dash-logo-img" mode="aspectFill" />
+          </view>
+          <view class="dash-header-text">
+            <text class="greeting">{{ greetingText }}，{{ userName??"用户" }}</text>
+            <text class="workshop-name">{{ workshopDisplayName }}</text>
+          </view>
+          <text class="header-edit-hint">&#x203A;</text>
+        </view>
       </view>
 
       <!-- Stats Cards -->
@@ -96,12 +104,13 @@ import { ref, onMounted, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
-import { api } from '../../../utils/request';
+import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop, getUserInfo } from '../../../utils/storage';
 
 const workshop = getCurrentWorkshop();
 const userName = ref(getUserInfo()?.nickname || '老板');
 const workshopDisplayName = ref(workshop?.name || '我的企业');
+const workshopLogo = ref(workshop?.logo_url || '');
 
 const stats = ref({ pendingCount: 0, workerCount: 0, monthSalary: '0' });
 const activities = ref<{ text: string; color: string }[]>([]);
@@ -205,6 +214,37 @@ onMounted(async () => {
   background:
     radial-gradient(ellipse at 20% 50%, rgba(200,149,108,0.35) 0%, transparent 60%),
     linear-gradient(160deg, #1E1E2A 0%, #2A2A3C 100%);
+}
+
+.dash-header-top {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+}
+
+.dash-logo {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 3rpx solid rgba(255,255,255,0.25);
+}
+
+.dash-logo-img {
+  width: 96rpx;
+  height: 96rpx;
+}
+
+.dash-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-edit-hint {
+  font-size: 40rpx;
+  color: rgba(255,255,255,0.4);
+  flex-shrink: 0;
 }
 
 .greeting {

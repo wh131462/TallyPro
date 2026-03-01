@@ -30,7 +30,13 @@
         @tap="switchWorkshop(ws)"
       >
         <view class="icon-box" :style="{ background: ws.role === 'owner' ? 'rgba(200,149,108,0.12)' : '#E8F2EC' }">
-          <image :src="ws.role === 'owner' ? '/static/icons/factory.svg' : '/static/icons/worker.svg'" class="icon-img" />
+          <image
+            v-if="ws.logo_url"
+            :src="getImageUrl(ws.logo_url)"
+            class="icon-logo"
+            mode="aspectFill"
+          />
+          <image v-else :src="ws.role === 'owner' ? '/static/icons/factory.svg' : '/static/icons/worker.svg'" class="icon-img" />
         </view>
         <view class="item-content">
           <text class="item-title">{{ ws.name }}</text>
@@ -118,6 +124,7 @@ interface WorkshopItem {
   name: string;
   role: 'owner' | 'worker';
   isOwnerWorkerMode?: boolean;
+  logo_url?: string;
 }
 
 const workshops = ref<WorkshopItem[]>([]);
@@ -127,7 +134,7 @@ function goTo(path: string) {
 }
 
 function switchWorkshop(ws: WorkshopItem) {
-  setCurrentWorkshop({ id: ws.id, name: ws.name, role: ws.role });
+  setCurrentWorkshop({ id: ws.id, name: ws.name, role: ws.role, logo_url: ws.logo_url });
   if (ws.role === 'owner') {
     uni.redirectTo({ url: '/pages/admin/dashboard/index' });
   } else {
@@ -199,8 +206,8 @@ async function loadWorkshops() {
   try {
     const res = await api.get<any>('/workshops');
     const owned = (res.data?.owned || []).flatMap((w: any) => [
-      { id: w.id, name: w.name, role: 'owner' as const },
-      { id: w.id, name: w.name, role: 'worker' as const, isOwnerWorkerMode: true },
+      { id: w.id, name: w.name, role: 'owner' as const, logo_url: w.logo_url || '' },
+      { id: w.id, name: w.name, role: 'worker' as const, isOwnerWorkerMode: true, logo_url: w.logo_url || '' },
     ]);
     const joined = (res.data?.joined || [])
       .filter((w: any) => w.member_status !== 'pending')
@@ -208,6 +215,7 @@ async function loadWorkshops() {
         id: w.id,
         name: w.name,
         role: 'worker' as const,
+        logo_url: w.logo_url || '',
       }));
     workshops.value = [...owned, ...joined];
   } catch {
@@ -301,6 +309,12 @@ onShow(() => {
 .icon-img {
   width: 40rpx;
   height: 40rpx;
+}
+
+.icon-logo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
 }
 
 .item-arrow {

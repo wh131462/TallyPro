@@ -17,6 +17,7 @@ export interface Workshop {
   owner_id: number;
   name: string;
   description: string;
+  logo_url: string;
   invite_code: string;
   invite_expires_at: string | null;
   status: WorkshopStatus;

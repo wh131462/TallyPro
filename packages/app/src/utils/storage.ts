@@ -10,6 +10,7 @@ export interface WorkshopInfo {
   id: number;
   name: string;
   role: 'owner' | 'worker';
+  logo_url?: string;
 }
 
 export function getUserInfo(): UserInfo | null {

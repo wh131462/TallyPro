@@ -7,6 +7,7 @@ export class Workshop extends Model {
   declare description: string;
   declare invite_code: string;
   declare invite_expires_at: Date | null;
+  declare logo_url: string;
   declare status: 'active' | 'inactive';
   declare created_at: Date;
   declare updated_at: Date;
@@ -39,6 +40,10 @@ export class Workshop extends Model {
         invite_expires_at: {
           type: DataTypes.DATE,
           allowNull: true,
+        },
+        logo_url: {
+          type: DataTypes.STRING(500),
+          defaultValue: '',
         },
         status: {
           type: DataTypes.ENUM('active', 'inactive'),

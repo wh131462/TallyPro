@@ -98,6 +98,7 @@ async function handleCreate() {
         id: res.data.id,
         name: res.data.name,
         role: 'owner',
+        logo_url: res.data.logo_url || '',
       });
 
       uni.showToast({ title: '创建成功', icon: 'success' });

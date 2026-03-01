@@ -43,6 +43,7 @@ router.post('/', async (req: Request, res: Response) => {
       owner_id: req.userId,
       name: name.trim(),
       description: description || '',
+      logo_url: req.body.logo_url || '',
       invite_code: inviteCode,
       status: 'active',
     });
@@ -195,6 +196,7 @@ router.put('/:id', workshopOwner, async (req: Request, res: Response) => {
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name.trim();
     if (description !== undefined) updates.description = description;
+    if (req.body.logo_url !== undefined) updates.logo_url = req.body.logo_url;
     if (status !== undefined && ['active', 'inactive'].includes(status)) {
       updates.status = status;
     }

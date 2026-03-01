@@ -1,6 +1,18 @@
 <template>
   <view class="workshop-page">
     <view class="card">
+      <view class="logo-section" @tap="changeLogo">
+        <view class="logo-wrap">
+          <image
+            v-if="form.logo_url"
+            :src="getImageUrl(form.logo_url)"
+            class="logo-img"
+            mode="aspectFill"
+          />
+          <image v-else src="/static/icons/factory.svg" class="logo-placeholder" />
+        </view>
+        <text class="logo-hint">点击更换企业 Logo</text>
+      </view>
       <view class="form-group">
         <text class="form-label">企业名称</text>
         <input class="form-input" v-model="form.name" placeholder="请输入企业名称" />
@@ -42,10 +54,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { api } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
+import { chooseAndUploadImage, getImageUrl } from '../../../utils/request';
 import QRCode from '../../../components/QRCode.vue';
 
 const workshop = getCurrentWorkshop();
-const form = ref({ name: '', description: '' });
+const form = ref({ name: '', description: '', logo_url: '' });
 const inviteCode = ref('------');
 const inviteExpires = ref('--');
 const qrRef = ref<InstanceType<typeof QRCode> | null>(null);
@@ -67,6 +80,7 @@ onMounted(async () => {
     const res = await api.get<any>(`/workshops/${workshop.id}`);
     form.value.name = res.data.name;
     form.value.description = res.data.description;
+    form.value.logo_url = res.data.logo_url || '';
     inviteCode.value = res.data.invite_code || '------';
     inviteExpires.value = res.data.invite_expires_at?.split('T')[0] || '--';
   } catch (e) {
@@ -74,6 +88,15 @@ onMounted(async () => {
     form.value.name = workshop?.name || '';
   }
 });
+
+async function changeLogo() {
+  try {
+    const url = await chooseAndUploadImage();
+    form.value.logo_url = url;
+  } catch {
+    // 用户取消选择，忽略
+  }
+}
 
 async function saveWorkshop() {
   if (!workshop) return;
@@ -153,6 +176,42 @@ function disableWorkshop() {
 .workshop-page {
   min-height: 100vh;
   background: $cream;
+}
+
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 0 32rpx;
+}
+
+.logo-wrap {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: $cream;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 4rpx dashed $cream-deep;
+}
+
+.logo-img {
+  width: 160rpx;
+  height: 160rpx;
+}
+
+.logo-placeholder {
+  width: 64rpx;
+  height: 64rpx;
+  opacity: 0.4;
+}
+
+.logo-hint {
+  font-size: 22rpx;
+  color: $ink-faint;
+  margin-top: 16rpx;
 }
 
 .form-textarea {
