@@ -24,8 +24,16 @@ router.get('/', workshopMember, async (req: Request, res: Response) => {
   try {
     const { workshopId } = req.params;
 
+    // Owner sees all SKUs; workers see only active ones
+    const workshop = await Workshop.findByPk(Number(workshopId));
+    const isOwner = workshop && workshop.owner_id === req.userId;
+    const where: Record<string, unknown> = { workshop_id: Number(workshopId) };
+    if (!isOwner) {
+      where.is_active = true;
+    }
+
     const skus = await Sku.findAll({
-      where: { workshop_id: Number(workshopId), is_active: true },
+      where,
       include: [
         {
           model: Step,

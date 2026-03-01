@@ -96,9 +96,30 @@ function getSkuIcon(index: number) {
 }
 
 function onSkuTap(sku: Sku) {
-  uni.navigateTo({
-    url: `/pages/admin/sku-edit/index?skuId=${sku.id}&skuName=${encodeURIComponent(sku.name)}`,
+  const toggleLabel = sku.enabled ? '停用产品' : '启用产品';
+  uni.showActionSheet({
+    itemList: ['管理工序', toggleLabel],
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        uni.navigateTo({
+          url: `/pages/admin/sku-edit/index?skuId=${sku.id}&skuName=${encodeURIComponent(sku.name)}`,
+        });
+      } else if (res.tapIndex === 1) {
+        toggleSku(sku);
+      }
+    },
   });
+}
+
+async function toggleSku(sku: Sku) {
+  const newActive = !sku.enabled;
+  try {
+    await api.put(`/skus/${sku.id}`, { is_active: newActive } as any);
+    uni.showToast({ title: newActive ? '已启用' : '已停用', icon: 'success' });
+    loadSkus();
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 function addSku() {
