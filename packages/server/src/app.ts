@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../configs/.env') });
 
 import { sequelize } from './models';
 import { testConnection } from './config/database';

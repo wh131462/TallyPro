@@ -19,6 +19,9 @@ dist
 *.sln
 *.sw?
 
-# Env files
-.env
-!.env.example
+packages/server/uploads/
+
+# Env files (configs/.env.example is tracked)
+configs/.env
+configs/.env.production
+!configs/.env.example

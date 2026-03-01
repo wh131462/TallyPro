@@ -1,7 +1,8 @@
 import { Sequelize } from 'sequelize';
+import path from 'path';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../../configs/.env') });
 
 const isProduction = process.env.NODE_ENV === 'production';
 
