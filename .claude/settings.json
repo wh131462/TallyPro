@@ -32,7 +32,8 @@
       "Bash(node -e \"const v=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\)\\); const stable=v.filter\\(x=>!x.includes\\(''alpha''\\)\\); console.log\\(''Latest stable versions:''\\); stable.slice\\(-10\\).forEach\\(x=>console.log\\(x\\)\\)\")",
       "Bash(node -e \"const v=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\)\\); const stable=v.filter\\(x=>x.indexOf\\(''alpha''\\)===-1\\); console.log\\(''Latest stable versions:''\\); stable.slice\\(-10\\).forEach\\(x=>console.log\\(x\\)\\)\")",
       "Bash(npm view @dcloudio/vite-plugin-uni@3.0.0-4080720251210001 peerDependencies --json)",
-      "Bash(npm view @dcloudio/vite-plugin-uni@3.0.0-alpha-5000120260211001 peerDependencies --json)"
+      "Bash(npm view @dcloudio/vite-plugin-uni@3.0.0-alpha-5000120260211001 peerDependencies --json)",
+      "Bash(xargs ls -la)"
     ],
     "additionalDirectories": [
       "/Users/eternalheart/workspace/wh131462/tally-pro/packages/app/src/static"
