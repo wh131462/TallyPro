@@ -10,7 +10,7 @@ export interface User {
   updated_at: string;
 }
 
-// ==================== 工坊 ====================
+// ==================== 企业 ====================
 
 export interface Workshop {
   id: number;
@@ -26,7 +26,7 @@ export interface Workshop {
 
 export type WorkshopStatus = 'active' | 'inactive';
 
-// ==================== 工坊成员 ====================
+// ==================== 企业成员 ====================
 
 export interface WorkshopMember {
   id: number;
@@ -65,6 +65,7 @@ export interface Step {
   sku_id: number;
   name: string;
   unit_price: number;
+  image_url: string;
   sort_order: number;
   is_active: boolean;
   deleted_at: string | null;
@@ -140,6 +141,30 @@ export interface OperationLog {
   before_data: Record<string, unknown> | null;
   after_data: Record<string, unknown> | null;
   remark: string;
+  created_at: string;
+}
+
+// ==================== 通知 ====================
+
+export type NotificationType =
+  | 'member_apply'
+  | 'member_approved'
+  | 'member_rejected'
+  | 'member_removed'
+  | 'record_submitted'
+  | 'record_confirmed'
+  | 'record_modified'
+  | 'settlement_created'
+  | 'settlement_confirmed';
+
+export interface Notification {
+  id: number;
+  user_id: number;
+  workshop_id: number;
+  type: NotificationType;
+  title: string;
+  content: string;
+  is_read: boolean;
   created_at: string;
 }
 
