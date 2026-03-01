@@ -27,10 +27,11 @@ router.post('/wx-login', async (req: Request, res: Response) => {
     // Exchange code for openid via WeChat API
     const appId = process.env.WX_APP_ID;
     const appSecret = process.env.WX_APP_SECRET;
+    const isDev = process.env.NODE_ENV === 'development';
 
     let openid: string;
 
-    if (appId && appSecret) {
+    if (appId && appSecret && !isDev) {
       // Production: call WeChat API
       const wxUrl = `https://api.weixin.qq.com/sns/jscode2session?appid=${appId}&secret=${appSecret}&js_code=${code}&grant_type=authorization_code`;
 
@@ -38,6 +39,7 @@ router.post('/wx-login', async (req: Request, res: Response) => {
       const wxData = await response.json() as { openid?: string; errcode?: number; errmsg?: string };
 
       if (wxData.errcode || !wxData.openid) {
+        console.error('[wx-login] failed:', JSON.stringify(wxData));
         res.status(400).json(fail(wxData.errmsg || '微信登录失败'));
         return;
       }
@@ -45,6 +47,7 @@ router.post('/wx-login', async (req: Request, res: Response) => {
       openid = wxData.openid;
     } else {
       // Development: use code as mock openid
+      console.log('[wx-login] dev mode, using mock openid for code:', code);
       openid = `dev_${code}`;
     }
 
