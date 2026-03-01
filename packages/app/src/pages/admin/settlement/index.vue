@@ -73,7 +73,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { api } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 
@@ -99,10 +100,10 @@ function goDetail(id: number) {
 }
 
 function createSettlement() {
-  uni.showToast({ title: '功能开发中', icon: 'none' });
+  uni.navigateTo({ url: '/pages/admin/create-settlement/index' });
 }
 
-onMounted(async () => {
+async function loadSettlements() {
   if (!workshop) {
     loading.value = false;
     return;
@@ -121,7 +122,6 @@ onMounted(async () => {
         record_count: s.record_count || 0,
         product_count: s.product_count || 0,
       }));
-      // Calculate totals from the list
       let total = 0;
       let settled = 0;
       for (const s of settlements.value) {
@@ -137,7 +137,9 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
+
+onShow(loadSettlements);
 </script>
 
 <style lang="scss" scoped>

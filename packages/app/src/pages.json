@@ -73,6 +73,12 @@
       }
     },
     {
+      "path": "pages/admin/create-settlement/index",
+      "style": {
+        "navigationBarTitleText": "创建结算单"
+      }
+    },
+    {
       "path": "pages/admin/logs/index",
       "style": {
         "navigationBarTitleText": "操作日志"
