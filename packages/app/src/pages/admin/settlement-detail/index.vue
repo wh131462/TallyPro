@@ -153,7 +153,7 @@ onMounted(async () => {
 
       detail.value = {
         id: d.id,
-        worker_name: worker.nickname || '未知工人',
+        worker_name: worker.nickname || '未知员工',
         start_date: d.period_start || '',
         end_date: d.period_end || '',
         total_amount: d.total_amount || '0.00',

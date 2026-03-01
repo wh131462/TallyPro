@@ -2,22 +2,21 @@
   <view class="dashboard">
     <NavBar title="" :transparent="true" textColor="#fff" />
 
-    <scroll-view scroll-y class="dashboard-scroll safe-bottom">
       <!-- Header -->
       <view class="dash-header">
-        <text class="greeting">{{ greetingText }}，{{ workshopName }}</text>
+        <text class="greeting">{{ greetingText }}，{{ userName??"用户" }}</text>
         <text class="workshop-name">{{ workshopDisplayName }}</text>
       </view>
 
       <!-- Stats Cards -->
       <view class="dash-stats">
-        <view class="ds-card" @tap="goTo('/pages/admin/records/index')">
+        <view class="ds-card" @tap="goTo('/pages/admin/records/index?status=pending')">
           <text class="ds-value" style="color: #D4845A;">{{ stats.pendingCount }}</text>
           <text class="ds-label">待审核</text>
         </view>
         <view class="ds-card" @tap="goTo('/pages/admin/workers/index')">
           <text class="ds-value" style="color: #5B8DB8;">{{ stats.workerCount }}</text>
-          <text class="ds-label">工人数</text>
+          <text class="ds-label">员工数</text>
         </view>
         <view class="ds-card" @tap="goTo('/pages/admin/settlement/index')">
           <text class="ds-value" style="color: #6B9B7B;">¥{{ stats.monthSalary }}</text>
@@ -37,7 +36,7 @@
           <view class="qa-icon" style="background: #EBF2F8;">
             <image src="/static/icons/people.svg" class="qa-img" />
           </view>
-          <text class="qa-label">工人管理</text>
+          <text class="qa-label">员工管理</text>
         </view>
         <view class="quick-action" @tap="goTo('/pages/admin/skus/index')">
           <view class="qa-icon" style="background: #E8F2EC;">
@@ -86,8 +85,7 @@
         </view>
       </view>
 
-      <view style="height: 40rpx;"></view>
-    </scroll-view>
+      <view class="tab-bar-clearance"></view>
 
     <TabBar role="admin" current="/pages/admin/dashboard/index" />
   </view>
@@ -95,14 +93,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
 import { api } from '../../../utils/request';
-import { getCurrentWorkshop } from '../../../utils/storage';
+import { getCurrentWorkshop, getUserInfo } from '../../../utils/storage';
 
 const workshop = getCurrentWorkshop();
-const workshopName = ref(workshop?.name || '我的工坊');
-const workshopDisplayName = ref(workshop?.name || '我的工坊');
+const userName = ref(getUserInfo()?.nickname || '老板');
+const workshopDisplayName = ref(workshop?.name || '我的企业');
 
 const stats = ref({ pendingCount: 0, workerCount: 0, monthSalary: '0' });
 const activities = ref<{ text: string; color: string }[]>([]);
@@ -117,9 +116,25 @@ const greetingText = computed(() => {
   return '晚上好';
 });
 
+const tabPages = [
+  '/pages/admin/dashboard/index',
+  '/pages/admin/records/index',
+  '/pages/admin/skus/index',
+  '/pages/profile/index',
+];
+
 function goTo(path: string) {
-  uni.navigateTo({ url: path });
+  const basePath = path.split('?')[0];
+  if (tabPages.includes(basePath)) {
+    uni.redirectTo({ url: path });
+  } else {
+    uni.navigateTo({ url: path });
+  }
 }
+
+onShow(() => {
+  userName.value = getUserInfo()?.nickname || '老板';
+});
 
 onMounted(async () => {
   if (!workshop) return;
@@ -128,7 +143,7 @@ onMounted(async () => {
     if (res.data) {
       stats.value = {
         pendingCount: res.data.total_pending || 0,
-        workerCount: res.data.total_records || 0,
+        workerCount: res.data.worker_count || 0,
         monthSalary: String(res.data.total_amount || 0),
       };
       overview.value = {
@@ -152,9 +167,19 @@ onMounted(async () => {
         approve_member: '#5B8DB8',
         reject_member: '#C75B5B',
         remove_member: '#C75B5B',
+        change_price: '#D4845A',
+      };
+      const actionLabel: Record<string, string> = {
+        confirm_record: '确认了一条记工记录',
+        modify_record: '修改了一条记工记录',
+        batch_confirm_records: '批量确认了记工记录',
+        approve_member: '通过了员工申请',
+        reject_member: '拒绝了员工申请',
+        remove_member: '移除了一名员工',
+        change_price: '调整了工序单价',
       };
       activities.value = logRes.data.list.map((log: any) => ({
-        text: log.remark || log.action,
+        text: log.remark || actionLabel[log.action] || log.action,
         color: colorMap[log.action] || '#D4845A',
       }));
     }
@@ -170,10 +195,6 @@ onMounted(async () => {
 .dashboard {
   min-height: 100vh;
   background: $cream;
-}
-
-.dashboard-scroll {
-  height: 100vh;
 }
 
 .dash-header {

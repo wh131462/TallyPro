@@ -5,6 +5,22 @@
       <view class="form-section">
         <text class="section-title">产品信息</text>
         <view class="form-card">
+          <!-- Product Image -->
+          <view class="form-group">
+            <text class="form-label">产品图片</text>
+            <view class="image-picker" @tap="pickSkuImage">
+              <image
+                v-if="skuForm.image_url"
+                :src="getImageUrl(skuForm.image_url)"
+                class="picked-image"
+                mode="aspectFill"
+              />
+              <view v-else class="image-placeholder">
+                <image src="/static/icons/camera.svg" class="placeholder-icon" />
+                <text class="placeholder-text">拍照/选图</text>
+              </view>
+            </view>
+          </view>
           <view class="form-group">
             <text class="form-label">产品名称</text>
             <input
@@ -43,7 +59,10 @@
           :key="step.id"
           class="step-card"
         >
-          <view class="step-number" :style="{ background: stepColors[index % stepColors.length].bg }">
+          <view v-if="step.image_url" class="step-img-wrap">
+            <image :src="getImageUrl(step.image_url)" class="step-img" mode="aspectFill" />
+          </view>
+          <view v-else class="step-number" :style="{ background: stepColors[index % stepColors.length].bg }">
             <text class="step-number-text" :style="{ color: stepColors[index % stepColors.length].text }">
               {{ index + 1 }}
             </text>
@@ -77,6 +96,22 @@
       <view class="modal-content" @tap.stop>
         <text class="modal-title">{{ editingStep ? '编辑工序' : '添加工序' }}</text>
         <view class="modal-form">
+          <!-- Step Image -->
+          <view class="form-group">
+            <text class="form-label">工序图片（选填）</text>
+            <view class="image-picker image-picker-sm" @tap="pickStepImage">
+              <image
+                v-if="stepForm.image_url"
+                :src="getImageUrl(stepForm.image_url)"
+                class="picked-image"
+                mode="aspectFill"
+              />
+              <view v-else class="image-placeholder">
+                <image src="/static/icons/camera.svg" class="placeholder-icon placeholder-icon-sm" />
+                <text class="placeholder-text placeholder-text-sm">拍照/选图</text>
+              </view>
+            </view>
+          </view>
           <view class="form-group">
             <text class="form-label">工序名称</text>
             <input
@@ -111,24 +146,25 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { api } from '../../../utils/request';
+import { api, chooseAndUploadImage, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 
 interface Step {
   id: number;
   name: string;
   price: number;
+  image_url: string;
   sort_order: number;
 }
 
 const workshop = getCurrentWorkshop();
 const skuId = ref<number>(0);
-const skuForm = ref({ name: '', description: '' });
+const skuForm = ref({ name: '', description: '', image_url: '' });
 const steps = ref<Step[]>([]);
 
 const showEditModal = ref(false);
 const editingStep = ref<Step | null>(null);
-const stepForm = ref({ name: '', price: '' });
+const stepForm = ref({ name: '', price: '', image_url: '' });
 
 const stepColors = [
   { bg: '#FFF0E8', text: '#D4845A' },
@@ -161,6 +197,7 @@ async function loadSkuDetail() {
     const res = await api.get<any>(`/skus/${skuId.value}`);
     skuForm.value.name = res.data?.name || '';
     skuForm.value.description = res.data?.description || '';
+    skuForm.value.image_url = res.data?.image_url || '';
   } catch (e) {
     console.error('加载产品详情失败', e);
   }
@@ -175,10 +212,29 @@ async function loadSteps() {
       id: s.id,
       name: s.name || '未命名',
       price: Number(s.unit_price || s.price) || 0,
+      image_url: s.image_url || '',
       sort_order: s.sort_order || 0,
     }));
   } catch (e) {
     console.error('加载工序列表失败', e);
+  }
+}
+
+async function pickSkuImage() {
+  try {
+    const url = await chooseAndUploadImage();
+    skuForm.value.image_url = url;
+  } catch {
+    // cancelled or failed
+  }
+}
+
+async function pickStepImage() {
+  try {
+    const url = await chooseAndUploadImage();
+    stepForm.value.image_url = url;
+  } catch {
+    // cancelled or failed
   }
 }
 
@@ -192,6 +248,7 @@ async function saveSkuInfo() {
     await api.put(`/skus/${skuId.value}`, {
       name: skuForm.value.name,
       description: skuForm.value.description,
+      image_url: skuForm.value.image_url,
     } as any);
     uni.showToast({ title: '保存成功', icon: 'success' });
   } catch (e) {
@@ -201,13 +258,13 @@ async function saveSkuInfo() {
 
 function addStep() {
   editingStep.value = null;
-  stepForm.value = { name: '', price: '' };
+  stepForm.value = { name: '', price: '', image_url: '' };
   showEditModal.value = true;
 }
 
 function editStep(step: Step) {
   editingStep.value = step;
-  stepForm.value = { name: step.name, price: String(step.price) };
+  stepForm.value = { name: step.name, price: String(step.price), image_url: step.image_url };
   showEditModal.value = true;
 }
 
@@ -225,17 +282,17 @@ async function confirmStepEdit() {
 
   try {
     if (editingStep.value) {
-      // Update existing step
       await api.put(`/steps/${editingStep.value.id}`, {
         name,
-        price,
+        unit_price: price,
+        image_url: stepForm.value.image_url,
       } as any);
       uni.showToast({ title: '修改成功', icon: 'success' });
     } else {
-      // Create new step
       await api.post(`/skus/${skuId.value}/steps`, {
         name,
-        price,
+        unit_price: price,
+        image_url: stepForm.value.image_url,
         sort_order: steps.value.length + 1,
       } as any);
       uni.showToast({ title: '添加成功', icon: 'success' });
@@ -328,6 +385,56 @@ async function confirmStepEdit() {
   line-height: 1.6;
 }
 
+/* Image Picker */
+.image-picker {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: $cream;
+  border: 2rpx dashed rgba(0,0,0,0.12);
+}
+
+.image-picker-sm {
+  width: 160rpx;
+  height: 160rpx;
+}
+
+.picked-image {
+  width: 100%;
+  height: 100%;
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+.placeholder-icon {
+  width: 48rpx;
+  height: 48rpx;
+  opacity: 0.3;
+}
+
+.placeholder-icon-sm {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.placeholder-text {
+  font-size: 22rpx;
+  color: $ink-faint;
+}
+
+.placeholder-text-sm {
+  font-size: 20rpx;
+}
+
 .btn-save-info {
   width: 100%;
   height: 76rpx;
@@ -380,6 +487,19 @@ async function confirmStepEdit() {
 .step-number-text {
   font-size: 30rpx;
   font-weight: 700;
+}
+
+.step-img-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.step-img {
+  width: 100%;
+  height: 100%;
 }
 
 .step-content {

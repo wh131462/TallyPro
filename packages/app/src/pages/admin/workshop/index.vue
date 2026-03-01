@@ -2,47 +2,64 @@
   <view class="workshop-page">
     <view class="card">
       <view class="form-group">
-        <text class="form-label">工坊名称</text>
-        <input class="form-input" v-model="form.name" placeholder="请输入工坊名称" />
+        <text class="form-label">企业名称</text>
+        <input class="form-input" v-model="form.name" placeholder="请输入企业名称" />
       </view>
       <view class="form-group">
-        <text class="form-label">工坊简介</text>
-        <textarea class="form-input form-textarea" v-model="form.description" placeholder="请输入工坊简介" />
+        <text class="form-label">企业简介</text>
+        <textarea class="form-input form-textarea" v-model="form.description" placeholder="请输入企业简介" />
       </view>
       <button class="btn-primary" @tap="saveWorkshop">保存修改</button>
     </view>
 
-    <text class="section-title">邀请工人</text>
+    <text class="section-title">邀请员工</text>
     <view class="card invite-card">
       <view class="qr-area">
-        <view class="qr-box">
+        <view class="qr-box" v-if="qrValue">
+          <QRCode ref="qrRef" :value="qrValue" :size="280" @ready="qrReady = true" />
+        </view>
+        <view class="qr-box qr-box--empty" v-else>
           <image src="/static/icons/qrcode.svg" class="qr-placeholder" />
         </view>
-        <text class="qr-text">扫描二维码加入工坊</text>
+        <text class="qr-text">扫描二维码加入企业</text>
         <text class="invite-code">{{ inviteCode }}</text>
         <text class="invite-expire">有效期至 {{ inviteExpires }}</text>
       </view>
       <view class="invite-btns">
         <button class="btn-outline" style="flex: 1;" @tap="copyCode">复制邀请码</button>
+        <button class="btn-outline" style="flex: 1;" @tap="saveQrImage">保存二维码</button>
         <button class="btn-primary" style="flex: 1;" @tap="regenerateCode">重新生成</button>
       </view>
     </view>
 
     <view style="padding: 32rpx 28rpx;">
-      <button class="btn-danger" @tap="disableWorkshop">停用工坊</button>
+      <button class="btn-danger" @tap="disableWorkshop">停用企业</button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { api } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
+import QRCode from '../../../components/QRCode.vue';
 
 const workshop = getCurrentWorkshop();
 const form = ref({ name: '', description: '' });
 const inviteCode = ref('------');
 const inviteExpires = ref('--');
+const qrRef = ref<InstanceType<typeof QRCode> | null>(null);
+const qrReady = ref(false);
+
+// 二维码内容：使用 JSON 格式，包含邀请码和企业信息，方便扫码端解析
+const qrValue = computed(() => {
+  if (!inviteCode.value || inviteCode.value === '------') return '';
+  return JSON.stringify({
+    type: 'tally_invite',
+    code: inviteCode.value,
+    workshop: workshop?.name || '',
+  });
+});
 
 onMounted(async () => {
   if (!workshop) return;
@@ -53,7 +70,7 @@ onMounted(async () => {
     inviteCode.value = res.data.invite_code || '------';
     inviteExpires.value = res.data.invite_expires_at?.split('T')[0] || '--';
   } catch (e) {
-    console.error('加载工坊信息失败', e);
+    console.error('加载企业信息失败', e);
     form.value.name = workshop?.name || '';
   }
 });
@@ -87,10 +104,40 @@ async function regenerateCode() {
   }
 }
 
+async function saveQrImage() {
+  if (!qrRef.value || !qrReady.value) {
+    uni.showToast({ title: '二维码未就绪', icon: 'none' });
+    return;
+  }
+  try {
+    const tempPath = await qrRef.value.toTempFilePath();
+    uni.saveImageToPhotosAlbum({
+      filePath: tempPath,
+      success: () => uni.showToast({ title: '已保存到相册', icon: 'success' }),
+      fail: (err) => {
+        if (err.errMsg?.includes('auth deny') || err.errMsg?.includes('authorize')) {
+          uni.showModal({
+            title: '提示',
+            content: '需要授权访问相册才能保存图片',
+            confirmText: '去设置',
+            success(res) {
+              if (res.confirm) uni.openSetting({});
+            },
+          });
+        } else {
+          uni.showToast({ title: '保存失败', icon: 'none' });
+        }
+      },
+    });
+  } catch {
+    uni.showToast({ title: '生成图片失败', icon: 'none' });
+  }
+}
+
 function disableWorkshop() {
   uni.showModal({
     title: '确认停用',
-    content: '停用后工人将无法提交记录，确定停用吗？',
+    content: '停用后员工将无法提交记录，确定停用吗？',
     success(res) {
       if (res.confirm) {
         uni.showToast({ title: '已停用', icon: 'success' });
@@ -126,11 +173,16 @@ function disableWorkshop() {
   width: 320rpx;
   height: 320rpx;
   margin: 0 auto;
-  border: 4rpx dashed $cream-deep;
   border-radius: $radius-md;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #fff;
+  overflow: hidden;
+}
+
+.qr-box--empty {
+  border: 4rpx dashed $cream-deep;
   background: $cream;
 }
 

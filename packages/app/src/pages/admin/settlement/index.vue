@@ -113,7 +113,7 @@ onMounted(async () => {
       const list = res.data.list || res.data || [];
       settlements.value = (Array.isArray(list) ? list : []).map((s: any) => ({
         id: s.id,
-        worker_name: s.worker?.nickname || '未知工人',
+        worker_name: s.worker?.nickname || '未知员工',
         start_date: s.period_start || '',
         end_date: s.period_end || '',
         total_amount: s.total_amount || '0.00',

@@ -1,7 +1,20 @@
 <template>
   <view class="records-page">
+    <NavBar :title="pendingMode ? '待审核记录' : '记录审核'" />
+
+    <!-- Pending Mode Header -->
+    <view v-if="pendingMode" class="pending-mode-bar">
+      <view class="pending-mode-info">
+        <view class="pending-mode-dot"></view>
+        <text class="pending-mode-text">共 {{ records.length }} 条待审核</text>
+      </view>
+      <view class="pending-mode-switch" @tap="exitPendingMode">
+        <text class="pending-mode-switch-text">按日期查看</text>
+      </view>
+    </view>
+
     <!-- Date Navigation Bar -->
-    <view class="date-bar">
+    <view v-if="!pendingMode" class="date-bar">
       <view class="date-arrow" @tap="changeDate(-1)">
         <image src="/static/icons/arrow-left.svg" class="date-arrow-icon" />
       </view>
@@ -16,7 +29,7 @@
     </view>
 
     <!-- Filter Tabs -->
-    <view class="filter-bar">
+    <view v-if="!pendingMode" class="filter-bar">
       <view
         v-for="tab in tabs"
         :key="tab.key"
@@ -32,10 +45,10 @@
     </view>
 
     <!-- Records List -->
-    <scroll-view scroll-y class="record-scroll">
+    <view class="record-list">
       <view v-if="filteredRecords.length === 0" class="empty-state">
         <image src="/static/icons/clipboard.svg" class="empty-icon" />
-        <text class="empty-text">当日暂无记录</text>
+        <text class="empty-text">{{ pendingMode ? '暂无待审核记录' : '当日暂无记录' }}</text>
       </view>
 
       <view
@@ -44,8 +57,11 @@
         class="record-card"
       >
         <view class="record-header">
-          <view class="record-sku-badge">
-            <text class="record-sku-text">{{ record.skuName }}</text>
+          <view class="record-header-left">
+            <view class="record-sku-badge">
+              <text class="record-sku-text">{{ record.skuName }}</text>
+            </view>
+            <text v-if="record.workDate" class="record-date-text">{{ formatWorkDate(record.workDate) }}</text>
           </view>
           <view class="record-status" :class="record.status === 'pending' ? 'rs-pending' : 'rs-confirmed'">
             <text class="record-status-text">{{ record.status === 'pending' ? '待确认' : '已确认' }}</text>
@@ -81,16 +97,20 @@
           </button>
         </view>
       </view>
+    </view>
 
-      <view style="height: 160rpx;"></view>
-    </scroll-view>
+    <!-- Bottom spacer -->
+    <view :class="pendingCount > 0 ? 'tab-bar-clearance-with-bar' : 'tab-bar-clearance'"></view>
 
-    <!-- Batch Confirm Button -->
-    <view v-if="pendingCount > 0" class="bottom-bar safe-bottom">
-      <button class="btn-batch" @tap="batchConfirm">
-        <image src="/static/icons/check.svg" class="btn-batch-icon" />
-        <text class="btn-batch-text">批量确认全部待审核（{{ pendingCount }}条）</text>
-      </button>
+    <!-- Batch Confirm Button — 固定在 TabBar 上方 -->
+    <view v-if="pendingCount > 0" class="bottom-fixed">
+      <view class="bottom-bar">
+        <button class="btn-batch" @tap="batchConfirm">
+          <image src="/static/icons/check.svg" class="btn-batch-icon" />
+          <text class="btn-batch-text">批量确认全部待审核（{{ pendingCount }}条）</text>
+        </button>
+      </view>
+      <view class="tab-bar-placeholder"></view>
     </view>
 
     <!-- Modify Modal -->
@@ -121,6 +141,8 @@
         </view>
       </view>
     </view>
+
+    <TabBar role="admin" current="/pages/admin/records/index" />
   </view>
 </template>
 
@@ -129,6 +151,8 @@ import { ref, computed, onMounted } from 'vue';
 import { api } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 import { formatDate, getToday, addDays } from '../../../utils/date';
+import NavBar from '../../../components/NavBar.vue';
+import TabBar from '../../../components/TabBar.vue';
 
 interface Record {
   id: number;
@@ -139,12 +163,14 @@ interface Record {
   quantity: number;
   totalAmount: number;
   status: 'pending' | 'confirmed';
+  workDate: string;
 }
 
 const workshop = getCurrentWorkshop();
 const currentDate = ref(getToday());
 const currentTab = ref('all');
 const records = ref<Record[]>([]);
+const pendingMode = ref(false);
 
 const showModifyModal = ref(false);
 const modifyingRecord = ref<Record | null>(null);
@@ -168,6 +194,7 @@ const displayDate = computed(() => {
 const isDateToday = computed(() => currentDate.value === getToday());
 
 const filteredRecords = computed(() => {
+  if (pendingMode.value) return records.value;
   if (currentTab.value === 'all') return records.value;
   return records.value.filter(r => r.status === currentTab.value);
 });
@@ -176,13 +203,29 @@ const pendingCount = computed(() =>
   records.value.filter(r => r.status === 'pending').length,
 );
 
+function formatWorkDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const today = getToday();
+  if (dateStr === today) return '今天';
+  const yesterday = addDays(today, -1);
+  if (dateStr === yesterday) return '昨天';
+  const d = new Date(dateStr);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function exitPendingMode() {
+  pendingMode.value = false;
+  currentDate.value = getToday();
+  currentTab.value = 'all';
+  loadRecords();
+}
+
 function changeDate(offset: number) {
   currentDate.value = addDays(currentDate.value, offset);
   loadRecords();
 }
 
 function openDatePicker() {
-  // Use uni date picker
   uni.showModal({
     title: '选择日期',
     placeholderText: currentDate.value,
@@ -240,7 +283,7 @@ async function batchConfirm() {
   if (!workshop) return;
   uni.showModal({
     title: '批量确认',
-    content: `确定要确认当天全部 ${pendingCount.value} 条待审核记录吗？`,
+    content: `确定要确认全部 ${pendingCount.value} 条待审核记录吗？`,
     success: async (res) => {
       if (res.confirm) {
         try {
@@ -263,9 +306,13 @@ async function batchConfirm() {
 async function loadRecords() {
   if (!workshop) return;
   try {
-    const res = await api.get<any>(
-      `/records?workshop_id=${workshop.id}&work_date=${currentDate.value}`,
-    );
+    let url = `/records?workshop_id=${workshop.id}`;
+    if (pendingMode.value) {
+      url += `&status=pending&page_size=100`;
+    } else {
+      url += `&work_date=${currentDate.value}`;
+    }
+    const res = await api.get<any>(url);
     const list = res.data?.list || res.data || [];
     records.value = (Array.isArray(list) ? list : []).map((r: any) => {
       const step = r.step || {};
@@ -274,12 +321,13 @@ async function loadRecords() {
       return {
         id: r.id,
         skuName: sku.name || r.sku_name || '未知产品',
-        workerName: worker.nickname || r.worker_name || '未知工人',
+        workerName: worker.nickname || r.worker_name || '未知员工',
         stepName: step.name || r.step_name || '未知工序',
         price: Number(r.unit_price || step.unit_price) || 0,
         quantity: r.confirmed_quantity ?? r.quantity ?? 0,
         totalAmount: (r.confirmed_quantity ?? r.quantity ?? 0) * Number(r.unit_price || step.unit_price || 0),
         status: r.status === 'confirmed' || r.status === 'modified' ? 'confirmed' : 'pending',
+        workDate: r.work_date || '',
       };
     });
   } catch (e) {
@@ -288,6 +336,13 @@ async function loadRecords() {
 }
 
 onMounted(() => {
+  // Check URL params for pending mode
+  const pages = getCurrentPages();
+  const currentPage = pages[pages.length - 1] as any;
+  const options = currentPage?.$page?.options || currentPage?.options || {};
+  if (options.status === 'pending') {
+    pendingMode.value = true;
+  }
   loadRecords();
 });
 </script>
@@ -298,8 +353,46 @@ onMounted(() => {
 .records-page {
   min-height: 100vh;
   background: $cream;
+}
+
+/* Pending Mode Bar */
+.pending-mode-bar {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 28rpx;
+  background: $amber-surface;
+}
+
+.pending-mode-info {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.pending-mode-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: $amber-deep;
+}
+
+.pending-mode-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $amber-deep;
+}
+
+.pending-mode-switch {
+  padding: 8rpx 20rpx;
+  background: $surface;
+  border-radius: $radius-xl;
+}
+
+.pending-mode-switch-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: $ink-muted;
 }
 
 /* Date Bar */
@@ -398,8 +491,7 @@ onMounted(() => {
 }
 
 /* Record List */
-.record-scroll {
-  flex: 1;
+.record-list {
   padding: 16rpx 28rpx;
 }
 
@@ -418,6 +510,12 @@ onMounted(() => {
   margin-bottom: 16rpx;
 }
 
+.record-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .record-sku-badge {
   background: $cream;
   padding: 6rpx 16rpx;
@@ -428,6 +526,11 @@ onMounted(() => {
   font-size: 22rpx;
   font-weight: 600;
   color: $ink-soft;
+}
+
+.record-date-text {
+  font-size: 22rpx;
+  color: $ink-faint;
 }
 
 .record-status {
@@ -581,10 +684,6 @@ onMounted(() => {
 
 /* Bottom Bar */
 .bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   padding: 20rpx 28rpx;
   background: $surface;
   box-shadow: 0 -4rpx 16rpx rgba(30, 30, 42, 0.06);
@@ -628,7 +727,7 @@ onMounted(() => {
   background: rgba(30, 30, 42, 0.5);
   display: flex;
   align-items: flex-end;
-  z-index: 999;
+  z-index: 1000;
 }
 
 .modal-content {

@@ -20,7 +20,7 @@
     <scroll-view scroll-y class="worker-scroll">
       <view v-if="filteredWorkers.length === 0" class="empty-state">
         <image src="/static/icons/people.svg" class="empty-icon" />
-        <text class="empty-text">暂无工人数据</text>
+        <text class="empty-text">暂无员工数据</text>
       </view>
 
       <view
@@ -46,7 +46,7 @@
           </view>
         </view>
         <image
-          v-if="worker.status === 'pending'"
+          v-if="worker.status === 'pending' || worker.status === 'active'"
           src="/static/icons/arrow-right.svg"
           class="arrow-icon"
         />
@@ -55,12 +55,37 @@
       <view style="height: 160rpx;"></view>
     </scroll-view>
 
-    <!-- Add Worker Button -->
+    <!-- Invite Button -->
     <view class="bottom-bar safe-bottom">
-      <button class="btn-add" @tap="addWorkerByPhone">
+      <button class="btn-add" @tap="showInvite = true">
         <image src="/static/icons/plus.svg" class="btn-add-icon" />
-        <text class="btn-add-text">通过手机号添加工人</text>
+        <text class="btn-add-text">邀请员工加入</text>
       </button>
+    </view>
+
+    <!-- Invite Modal -->
+    <view v-if="showInvite" class="modal-mask">
+      <view class="modal-content">
+        <text class="modal-title">邀请员工</text>
+        <text class="modal-desc">让员工扫描二维码或输入邀请码加入企业</text>
+
+        <view class="qr-area">
+          <QRCode v-if="inviteCode" :value="qrValue" :size="360" />
+        </view>
+
+        <view class="invite-code-row">
+          <text class="invite-code-label">邀请码</text>
+          <text class="invite-code-value">{{ inviteCode }}</text>
+          <view class="copy-btn" @tap="copyCode">
+            <text class="copy-btn-text">复制</text>
+          </view>
+        </view>
+
+        <view class="modal-actions">
+          <button class="btn-refresh" @tap="refreshCode">刷新邀请码</button>
+          <button class="btn-close" @tap="showInvite = false">关闭</button>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -69,6 +94,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { api } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
+import QRCode from '../../../components/QRCode.vue';
 
 interface Worker {
   id: number;
@@ -82,12 +108,18 @@ interface Worker {
 const workshop = getCurrentWorkshop();
 const currentTab = ref('all');
 const workers = ref<Worker[]>([]);
+const showInvite = ref(false);
+const inviteCode = ref('');
 
 const avatarColors = ['#D4845A', '#5B8DB8', '#6B9B7B', '#8B6B96', '#C8956C', '#C75B5B'];
 
 function getAvatarColor(index: number): string {
   return avatarColors[index % avatarColors.length];
 }
+
+const qrValue = computed(() =>
+  JSON.stringify({ type: 'tally_invite', code: inviteCode.value })
+);
 
 const tabs = computed(() => {
   const pendingCount = workers.value.filter(w => w.status === 'pending').length;
@@ -125,31 +157,65 @@ function onWorkerTap(worker: Worker) {
     uni.navigateTo({
       url: `/pages/admin/approve/index?memberId=${worker.id}`,
     });
+  } else if (worker.status === 'active') {
+    uni.showActionSheet({
+      itemList: ['移除该员工'],
+      itemColor: '#C75B5B',
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          removeWorker(worker);
+        }
+      },
+    });
   }
 }
 
-function addWorkerByPhone() {
+function removeWorker(worker: Worker) {
   uni.showModal({
-    title: '添加工人',
-    placeholderText: '请输入手机号',
-    editable: true,
+    title: '确认移除',
+    content: `确定要将「${worker.name}」移出企业吗？移除后该员工将无法继续提交记录。`,
+    confirmColor: '#C75B5B',
+    confirmText: '移除',
     success: async (res) => {
-      if (res.confirm && res.content) {
-        const phone = res.content.trim();
-        if (!/^1\d{10}$/.test(phone)) {
-          uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
-          return;
-        }
+      if (res.confirm && workshop) {
         try {
-          await api.post(`/workshops/${workshop!.id}/members/add-by-phone`, { phone } as any);
-          uni.showToast({ title: '已发送邀请', icon: 'success' });
+          await api.put(`/workshops/${workshop.id}/members/${worker.id}/remove`, {} as any);
+          uni.showToast({ title: '已移除', icon: 'success' });
           loadWorkers();
         } catch (e) {
-          console.error(e);
+          console.error('移除员工失败', e);
         }
       }
     },
   });
+}
+
+function copyCode() {
+  uni.setClipboardData({
+    data: inviteCode.value,
+    success: () => uni.showToast({ title: '已复制邀请码', icon: 'success' }),
+  });
+}
+
+async function refreshCode() {
+  if (!workshop) return;
+  try {
+    const res = await api.post<any>(`/workshops/${workshop.id}/invite-code`);
+    inviteCode.value = res.data?.invite_code || inviteCode.value;
+    uni.showToast({ title: '邀请码已刷新', icon: 'success' });
+  } catch (e) {
+    console.error('刷新邀请码失败', e);
+  }
+}
+
+async function loadInviteCode() {
+  if (!workshop) return;
+  try {
+    const res = await api.get<any>(`/workshops/${workshop.id}`);
+    inviteCode.value = res.data?.invite_code || '';
+  } catch (e) {
+    console.error('获取邀请码失败', e);
+  }
 }
 
 async function loadWorkers() {
@@ -166,12 +232,13 @@ async function loadWorkers() {
       avatarColor: getAvatarColor(i),
     }));
   } catch (e) {
-    console.error('加载工人列表失败', e);
+    console.error('加载员工列表失败', e);
   }
 }
 
 onMounted(() => {
   loadWorkers();
+  loadInviteCode();
 });
 </script>
 
@@ -403,5 +470,124 @@ onMounted(() => {
   font-weight: 600;
   color: #fff;
   letter-spacing: 1rpx;
+}
+
+/* Invite Modal */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 30, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  width: 600rpx;
+  background: $surface;
+  border-radius: $radius-lg;
+  padding: 48rpx 40rpx;
+  text-align: center;
+  box-shadow: 0 16rpx 48rpx rgba(30, 30, 42, 0.15);
+}
+
+.modal-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: $ink;
+  margin-bottom: 12rpx;
+}
+
+.modal-desc {
+  display: block;
+  font-size: 24rpx;
+  color: $ink-faint;
+  margin-bottom: 40rpx;
+}
+
+.qr-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 36rpx;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: $radius-md;
+}
+
+.invite-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  margin-bottom: 36rpx;
+  padding: 20rpx 24rpx;
+  background: $cream;
+  border-radius: $radius-sm;
+}
+
+.invite-code-label {
+  font-size: 24rpx;
+  color: $ink-faint;
+}
+
+.invite-code-value {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: $ink;
+  letter-spacing: 8rpx;
+}
+
+.copy-btn {
+  padding: 8rpx 24rpx;
+  background: $ink;
+  border-radius: $radius-sm;
+}
+
+.copy-btn-text {
+  font-size: 22rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.btn-refresh {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $ink;
+  background: $cream;
+  border-radius: $radius-sm;
+  border: none;
+
+  &::after {
+    border: none;
+  }
+}
+
+.btn-close {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #fff;
+  background: $ink;
+  border-radius: $radius-sm;
+  border: none;
+
+  &::after {
+    border: none;
+  }
 }
 </style>

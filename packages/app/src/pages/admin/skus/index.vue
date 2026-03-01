@@ -1,6 +1,8 @@
 <template>
   <view class="skus-page">
-    <scroll-view scroll-y class="sku-scroll">
+    <NavBar title="产品管理" />
+
+    <view class="sku-content">
       <view v-if="skus.length === 0" class="empty-state">
         <image src="/static/icons/package.svg" class="empty-icon" />
         <text class="empty-text">暂无产品，点击下方按钮添加</text>
@@ -13,10 +15,13 @@
         :class="{ 'sku-disabled': !sku.enabled }"
         @tap="onSkuTap(sku)"
       >
-        <view class="sku-icon-wrap" :style="{ background: sku.iconBg }">
+        <view v-if="sku.image_url" class="sku-img-wrap">
+          <image :src="getImageUrl(sku.image_url)" class="sku-img" mode="aspectFill" />
+        </view>
+        <view v-else class="sku-icon-wrap" :style="{ background: sku.iconBg }">
           <image :src="sku.icon" class="sku-icon" />
         </view>
-        <view class="sku-content">
+        <view class="sku-info">
           <view class="sku-header">
             <text class="sku-name">{{ sku.name }}</text>
             <view class="sku-badge" :class="sku.enabled ? 'badge-active' : 'badge-disabled'">
@@ -37,28 +42,38 @@
         </view>
         <image src="/static/icons/arrow-right.svg" class="arrow-icon" />
       </view>
-
-      <view style="height: 160rpx;"></view>
-    </scroll-view>
-
-    <!-- Add SKU Button -->
-    <view class="bottom-bar safe-bottom">
-      <button class="btn-add" @tap="addSku">
-        <image src="/static/icons/plus.svg" class="btn-add-icon" />
-        <text class="btn-add-text">添加产品</text>
-      </button>
     </view>
+
+    <!-- Bottom spacer: TabBar + bottom-bar -->
+    <view class="tab-bar-clearance-with-bar"></view>
+
+    <!-- Add SKU Button — 固定在 TabBar 上方 -->
+    <view class="bottom-fixed">
+      <view class="bottom-bar">
+        <button class="btn-add" @tap="addSku">
+          <image src="/static/icons/plus.svg" class="btn-add-icon" />
+          <text class="btn-add-text">添加产品</text>
+        </button>
+      </view>
+      <view class="tab-bar-placeholder"></view>
+    </view>
+
+    <TabBar role="admin" current="/pages/admin/skus/index" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { api } from '../../../utils/request';
+import { ref } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
+import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
+import NavBar from '../../../components/NavBar.vue';
+import TabBar from '../../../components/TabBar.vue';
 
 interface Sku {
   id: number;
   name: string;
+  image_url: string;
   icon: string;
   iconBg: string;
   stepCount: number;
@@ -101,7 +116,6 @@ function addSku() {
         try {
           const result = await api.post<any>(`/workshops/${workshop!.id}/skus`, { name } as any);
           uni.showToast({ title: '添加成功', icon: 'success' });
-          // Navigate to edit page for the new SKU
           if (result.data?.id) {
             uni.navigateTo({
               url: `/pages/admin/sku-edit/index?skuId=${result.data.id}&skuName=${encodeURIComponent(name)}`,
@@ -127,6 +141,7 @@ async function loadSkus() {
       return {
         id: s.id,
         name: s.name || '未命名产品',
+        image_url: s.image_url || '',
         icon: iconInfo.icon,
         iconBg: iconInfo.bg,
         stepCount: s.steps?.length || s.step_count || 0,
@@ -139,7 +154,7 @@ async function loadSkus() {
   }
 }
 
-onMounted(() => {
+onShow(() => {
   loadSkus();
 });
 </script>
@@ -150,12 +165,9 @@ onMounted(() => {
 .skus-page {
   min-height: 100vh;
   background: $cream;
-  display: flex;
-  flex-direction: column;
 }
 
-.sku-scroll {
-  flex: 1;
+.sku-content {
   padding: 24rpx 28rpx;
 }
 
@@ -175,6 +187,19 @@ onMounted(() => {
   opacity: 0.6;
 }
 
+.sku-img-wrap {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: $radius-md;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sku-img-wrap image {
+  width: 100%;
+  height: 100%;
+}
+
 .sku-icon-wrap {
   width: 96rpx;
   height: 96rpx;
@@ -190,7 +215,7 @@ onMounted(() => {
   height: 48rpx;
 }
 
-.sku-content {
+.sku-info {
   flex: 1;
   min-width: 0;
 }
@@ -295,10 +320,6 @@ onMounted(() => {
 }
 
 .bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   padding: 20rpx 28rpx;
   background: $surface;
   box-shadow: 0 -4rpx 16rpx rgba(30, 30, 42, 0.06);

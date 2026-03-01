@@ -42,11 +42,11 @@
             <input
               class="form-input"
               v-model="remarkName"
-              placeholder="为该工人设置备注名（选填）"
+              placeholder="为该员工设置备注名（选填）"
               :maxlength="20"
             />
           </view>
-          <text class="form-hint">备注名仅管理员可见，方便识别工人</text>
+          <text class="form-hint">备注名仅管理员可见，方便识别员工</text>
         </view>
       </view>
 
