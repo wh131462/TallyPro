@@ -129,7 +129,7 @@ async function handleSubmit() {
 
   const workshop = getCurrentWorkshop();
   if (!workshop) {
-    uni.showToast({ title: '请先选择工坊', icon: 'none' });
+    uni.showToast({ title: '请先选择企业', icon: 'none' });
     return;
   }
 

@@ -2,7 +2,12 @@
   <view class="history-page">
     <NavBar title="历史记录" />
 
-    <scroll-view scroll-y class="history-scroll safe-bottom">
+      <!-- Workshop Name -->
+      <view class="workshop-bar" v-if="workshopName">
+        <image src="/static/icons/factory.svg" class="ws-bar-icon" />
+        <text class="ws-bar-name">{{ workshopName }}</text>
+      </view>
+
       <!-- Filter Tabs -->
       <view class="filter-tabs">
         <view
@@ -56,8 +61,7 @@
         <text class="empty-text">暂无记录</text>
       </view>
 
-      <view style="height: 140rpx;"></view>
-    </scroll-view>
+      <view class="tab-bar-clearance"></view>
 
     <TabBar role="worker" current="/pages/worker/history/index" />
   </view>
@@ -96,6 +100,7 @@ const filterTabs = [
 
 const activeFilter = ref('all');
 const records = ref<RecordItem[]>([]);
+const workshopName = ref('');
 
 const filteredRecords = computed(() => {
   if (activeFilter.value === 'all') return records.value;
@@ -141,6 +146,7 @@ function getStatusLabel(status: string): string {
 onMounted(async () => {
   const workshop = getCurrentWorkshop();
   if (!workshop) return;
+  workshopName.value = workshop.name;
   try {
     const res = await api.get<any>(`/records?workshop_id=${workshop.id}&page_size=100`);
     const list = res.data?.list || res.data || [];
@@ -173,12 +179,27 @@ onMounted(async () => {
   background: $cream;
 }
 
-.history-scroll {
-  height: 100vh;
+// Workshop Bar
+.workshop-bar {
+  background: $surface;
+  padding: 20rpx 36rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  border-bottom: 1rpx solid $cream;
 }
 
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+.ws-bar-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.ws-bar-name {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $ink;
+  letter-spacing: 1rpx;
 }
 
 // Filter Tabs

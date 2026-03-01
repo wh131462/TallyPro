@@ -2,7 +2,13 @@
   <view class="worklog-page">
     <NavBar title="每日记工" />
 
-    <scroll-view scroll-y class="worklog-scroll safe-bottom">
+      <!-- Workshop Selector -->
+      <view class="workshop-bar" @tap="switchWorkshop">
+        <image src="/static/icons/factory.svg" class="ws-bar-icon" />
+        <text class="ws-bar-name">{{ workshopName }}</text>
+        <text class="ws-bar-arrow">&#9662;</text>
+      </view>
+
       <!-- Date Navigation Bar -->
       <view class="date-bar">
         <view class="date-nav">
@@ -60,19 +66,19 @@
         <text class="empty-text">暂无产品数据</text>
       </view>
 
-      <view style="height: 140rpx;"></view>
-    </scroll-view>
+      <view class="tab-bar-clearance"></view>
 
     <TabBar role="worker" current="/pages/worker/worklog/index" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
 import { api } from '../../../utils/request';
-import { getCurrentWorkshop } from '../../../utils/storage';
+import { getCurrentWorkshop, setCurrentWorkshop } from '../../../utils/storage';
 import { formatDate, getToday, addDays, isToday } from '../../../utils/date';
 
 interface FrequentStep {
@@ -94,6 +100,13 @@ interface SkuItem {
 const currentDate = ref(getToday());
 const frequentSteps = ref<FrequentStep[]>([]);
 const skuList = ref<SkuItem[]>([]);
+const workshopName = ref('');
+
+interface JoinedWorkshop {
+  id: number;
+  name: string;
+}
+const joinedWorkshops = ref<JoinedWorkshop[]>([]);
 
 const displayDate = computed(() => {
   const suffix = isToday(currentDate.value) ? ' (今天)' : '';
@@ -119,9 +132,38 @@ function goFill(skuId: number) {
   });
 }
 
-onMounted(async () => {
+async function loadWorkshops() {
+  try {
+    const res = await api.get<any>('/workshops');
+    const owned = res.data?.owned || [];
+    const joined = (res.data?.joined || []).filter((w: any) => w.member_status === 'approved');
+    joinedWorkshops.value = [...owned, ...joined].map((w: any) => ({ id: w.id, name: w.name }));
+  } catch {
+    // ignore
+  }
+}
+
+function switchWorkshop() {
+  if (joinedWorkshops.value.length <= 1) return;
+  const workshop = getCurrentWorkshop();
+  const names = joinedWorkshops.value.map((w) => w.name);
+  uni.showActionSheet({
+    itemList: names,
+    success(res) {
+      const selected = joinedWorkshops.value[res.tapIndex];
+      if (selected && selected.id !== workshop?.id) {
+        setCurrentWorkshop({ id: selected.id, name: selected.name, role: 'worker' });
+        workshopName.value = selected.name;
+        loadSkus();
+      }
+    },
+  });
+}
+
+async function loadSkus() {
   const workshop = getCurrentWorkshop();
   if (!workshop) return;
+  workshopName.value = workshop.name;
   try {
     const res = await api.get<any>(`/workshops/${workshop.id}/skus`);
     const list = res.data || [];
@@ -134,6 +176,15 @@ onMounted(async () => {
   } catch (e) {
     console.error('加载产品列表失败', e);
   }
+}
+
+onShow(() => {
+  const workshop = getCurrentWorkshop();
+  if (workshop) {
+    workshopName.value = workshop.name;
+  }
+  loadSkus();
+  loadWorkshops();
 });
 </script>
 
@@ -145,12 +196,32 @@ onMounted(async () => {
   background: $cream;
 }
 
-.worklog-scroll {
-  height: 100vh;
+// Workshop Selector
+.workshop-bar {
+  background: $surface;
+  padding: 20rpx 36rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  border-bottom: 1rpx solid $cream;
 }
 
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+.ws-bar-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.ws-bar-name {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $ink;
+  letter-spacing: 1rpx;
+}
+
+.ws-bar-arrow {
+  font-size: 22rpx;
+  color: $ink-faint;
 }
 
 // Date Bar

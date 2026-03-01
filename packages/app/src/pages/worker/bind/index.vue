@@ -7,7 +7,7 @@
         <view class="scan-box" @tap="handleScan">
           <image src="/static/icons/camera.svg" class="scan-icon" />
         </view>
-        <text class="scan-hint">点击扫描主家二维码</text>
+        <text class="scan-hint">点击扫描企业主二维码</text>
       </view>
 
       <!-- Divider -->
@@ -31,22 +31,21 @@
         </view>
       </view>
 
-      <!-- My Workshop -->
-      <text class="section-title">我的工坊</text>
-      <view class="card" v-if="currentWorkshop">
-        <view class="workshop-row">
-          <view class="workshop-icon-wrap">
-            <image src="/static/icons/factory.svg" class="workshop-icon" />
+      <!-- My Workshops -->
+      <view v-if="joinedWorkshops.length > 0">
+        <text class="section-title">已加入的企业</text>
+        <view class="card" v-for="ws in joinedWorkshops" :key="ws.id" style="margin-bottom: 16rpx;">
+          <view class="workshop-row">
+            <view class="workshop-icon-wrap">
+              <image src="/static/icons/factory.svg" class="workshop-icon" />
+            </view>
+            <view class="workshop-info">
+              <text class="workshop-name">{{ ws.name }}</text>
+              <text class="workshop-owner">{{ ws.statusText }}</text>
+            </view>
+            <view class="badge" :class="ws.badgeClass">{{ ws.badgeLabel }}</view>
           </view>
-          <view class="workshop-info">
-            <text class="workshop-name">{{ currentWorkshop.name }}</text>
-            <text class="workshop-owner">主家: {{ currentWorkshop.ownerName || '---' }}</text>
-          </view>
-          <view class="badge badge-confirmed">已绑定</view>
         </view>
-      </view>
-      <view class="card empty-card" v-else>
-        <text class="empty-text">暂未绑定工坊</text>
       </view>
 
       <view style="height: 40rpx;"></view>
@@ -57,44 +56,63 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { api } from '../../../utils/request';
-import { getCurrentWorkshop } from '../../../utils/storage';
 
-interface WorkshopDetail {
+interface JoinedWorkshop {
   id: number;
   name: string;
-  ownerName?: string;
-  status?: string;
+  statusText: string;
+  badgeLabel: string;
+  badgeClass: string;
 }
 
 const inviteCode = ref('');
-const currentWorkshop = ref<WorkshopDetail | null>(null);
+const joinedWorkshops = ref<JoinedWorkshop[]>([]);
 
-onMounted(async () => {
-  const ws = getCurrentWorkshop();
-  if (ws) {
-    try {
-      const res = await api.get<any>(`/workshops/${ws.id}`);
-      currentWorkshop.value = {
-        id: res.data.id,
-        name: res.data.name,
-        ownerName: res.data.owner?.nickname,
-        status: res.data.status,
-      };
-    } catch {
-      currentWorkshop.value = {
-        id: ws.id,
-        name: ws.name,
-      };
-    }
-  }
+onMounted(() => {
+  loadJoinedWorkshops();
+  checkClipboard();
 });
+
+async function loadJoinedWorkshops() {
+  try {
+    const res = await api.get<any>('/workshops');
+    const joined = res.data?.joined || [];
+    joinedWorkshops.value = joined.map((w: any) => ({
+      id: w.id,
+      name: w.name,
+      statusText: w.member_status === 'pending' ? '等待审批中' : '员工',
+      badgeLabel: w.member_status === 'pending' ? '待审批' : '已加入',
+      badgeClass: w.member_status === 'pending' ? 'badge-pending' : 'badge-confirmed',
+    }));
+  } catch {
+    // ignore
+  }
+}
+
+function parseQrResult(raw: string): string {
+  // 尝试解析 JSON 格式的二维码内容
+  try {
+    const data = JSON.parse(raw);
+    if (data.type === 'tally_invite' && data.code) {
+      return data.code;
+    }
+  } catch {
+    // 非 JSON，当作纯邀请码处理
+  }
+  return raw.trim();
+}
 
 function handleScan() {
   uni.scanCode({
     scanType: ['qrCode'],
     success(res) {
       if (res.result) {
-        inviteCode.value = res.result;
+        const code = parseQrResult(res.result);
+        if (code.length !== 6) {
+          uni.showToast({ title: '无效的邀请码', icon: 'none' });
+          return;
+        }
+        inviteCode.value = code;
         handleJoin();
       }
     },
@@ -113,9 +131,44 @@ async function handleJoin() {
     await api.post('/workshops/join', { invite_code: inviteCode.value } as any);
     uni.showToast({ title: '申请已提交', icon: 'success' });
     inviteCode.value = '';
+    loadJoinedWorkshops();
   } catch {
     // Error handled in request interceptor
   }
+}
+
+function checkClipboard() {
+  uni.getClipboardData({
+    success(res) {
+      if (!res.data) return;
+      const text = res.data.trim();
+      // 尝试解析 JSON 格式（从二维码复制的内容）
+      let code = '';
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed.type === 'tally_invite' && parsed.code) {
+          code = parsed.code;
+        }
+      } catch {
+        // 纯文本，检查是否为6位邀请码
+        if (/^[A-Za-z0-9]{6}$/.test(text)) {
+          code = text;
+        }
+      }
+      if (!code) return;
+
+      uni.showModal({
+        title: '检测到邀请码',
+        content: `剪切板中包含邀请码「${code}」，是否自动填入？`,
+        confirmText: '填入',
+        success(modalRes) {
+          if (modalRes.confirm) {
+            inviteCode.value = code;
+          }
+        },
+      });
+    },
+  });
 }
 </script>
 
@@ -309,6 +362,11 @@ async function handleJoin() {
 .badge-confirmed {
   background: $sage-light;
   color: $sage;
+}
+
+.badge-pending {
+  background: $amber-surface;
+  color: $amber-deep;
 }
 
 .empty-card {

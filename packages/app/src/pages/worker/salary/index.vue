@@ -2,7 +2,12 @@
   <view class="salary-page">
     <NavBar title="" :transparent="true" textColor="#fff" />
 
-    <scroll-view scroll-y class="salary-scroll safe-bottom">
+      <!-- Workshop Name -->
+      <view class="workshop-bar-overlay" v-if="workshopName">
+        <image src="/static/icons/factory.svg" class="ws-overlay-icon" />
+        <text class="ws-overlay-name">{{ workshopName }}</text>
+      </view>
+
       <!-- Gradient Header -->
       <view class="salary-header">
         <view class="salary-month-nav">
@@ -50,8 +55,7 @@
         <text class="empty-text">暂无收入记录</text>
       </view>
 
-      <view style="height: 140rpx;"></view>
-    </scroll-view>
+      <view class="tab-bar-clearance"></view>
 
     <TabBar role="worker" current="/pages/worker/salary/index" />
   </view>
@@ -78,6 +82,7 @@ const salaryTotal = ref('0.00');
 const settledAmount = ref('0');
 const pendingAmount = ref('0');
 const details = ref<DetailItem[]>([]);
+const workshopName = ref('');
 
 const displayMonth = computed(() => {
   return `${currentYear.value}年${currentMonth.value}月`;
@@ -106,6 +111,7 @@ function nextMonth() {
 async function fetchSalary() {
   const workshop = getCurrentWorkshop();
   if (!workshop) return;
+  workshopName.value = workshop.name;
   try {
     const res = await api.get<any>(`/records/worker-salary?workshop_id=${workshop.id}&year=${currentYear.value}&month=${currentMonth.value}`);
     if (res.data) {
@@ -138,12 +144,26 @@ onMounted(() => {
   background: $cream;
 }
 
-.salary-scroll {
-  height: 100vh;
+// Workshop overlay on gradient
+.workshop-bar-overlay {
+  padding: 12rpx 36rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: rgba(0, 0, 0, 0.08);
 }
 
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+.ws-overlay-icon {
+  width: 32rpx;
+  height: 32rpx;
+  opacity: 0.7;
+}
+
+.ws-overlay-name {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: $ink-muted;
+  letter-spacing: 1rpx;
 }
 
 // Salary Header
