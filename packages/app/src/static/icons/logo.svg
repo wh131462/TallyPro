@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <path d="M24 6L8 14v4l16 8 16-8v-4L24 6z" fill="currentColor" opacity="0.15"/>
-  <path d="M24 8l13.5 6.75L24 21.5 10.5 14.75 24 8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/>
-  <path d="M10.5 14.75v12L24 33.5l13.5-6.75v-12" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/>
-  <path d="M24 21.5V33.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <path d="M31 11l-7 3.5-7-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
-  <circle cx="24" cy="27" r="1.5" fill="currentColor" opacity="0.6"/>
+  <path d="M24 6L8 14v4l16 8 16-8v-4L24 6z" fill="#333333" opacity="0.15"/>
+  <path d="M24 8l13.5 6.75L24 21.5 10.5 14.75 24 8z" stroke="#333333" stroke-width="2" stroke-linejoin="round" fill="none"/>
+  <path d="M10.5 14.75v12L24 33.5l13.5-6.75v-12" stroke="#333333" stroke-width="2" stroke-linejoin="round" fill="none"/>
+  <path d="M24 21.5V33.5" stroke="#333333" stroke-width="2" stroke-linecap="round"/>
+  <path d="M31 11l-7 3.5-7-3.5" stroke="#333333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <circle cx="24" cy="27" r="1.5" fill="#333333" opacity="0.6"/>
 </svg>
