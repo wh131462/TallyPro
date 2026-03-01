@@ -1,0 +1,103 @@
+name: Build & Deploy Server
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'packages/server/**'
+      - 'packages/shared/**'
+      - 'docker/**'
+      - '.github/workflows/deploy.yml'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: wh131462/tallypro-server
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: 'docker/'
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            # 生成 configs/.env.production
+            mkdir -p configs
+            cat > configs/.env.production << 'ENVEOF'
+            PORT=${{ secrets.APP_PORT }}
+            NODE_ENV=production
+            DB_HOST=mysql
+            DB_PORT=3306
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            WX_APP_ID=${{ secrets.WX_APP_ID }}
+            WX_APP_SECRET=${{ secrets.WX_APP_SECRET }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRES_IN=7d
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            VITE_API_BASE_URL=https://tally-api.131462.wang/api
+            ENVEOF
+
+            # 确保 proxy 网络存在
+            docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
+
+            # 拉取最新镜像并启动
+            cd docker
+            docker compose pull server
+            docker compose up -d
+            docker image prune -f

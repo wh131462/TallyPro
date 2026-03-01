@@ -1,0 +1,22 @@
+node_modules
+dist
+*.log
+.git
+.gitignore
+.DS_Store
+.idea
+.vscode
+
+# App frontend (only keep package.json for pnpm workspace resolution)
+packages/app/*
+!packages/app/package.json
+
+# Env files (injected at runtime)
+.env
+.env.*
+!.env.example
+
+# Design & docs
+design
+docs
+README.md
