@@ -1,14 +1,17 @@
 <template>
-  <view class="nav-bar" :style="{ background: transparent ? 'transparent' : '#fff', paddingTop: statusBarHeight + 'px' }">
-    <view class="nav-content">
-      <view v-if="showBack" class="nav-back" @tap="goBack">
-        <image src="/static/icons/arrow-left.svg" class="nav-back-icon" />
-      </view>
-      <text class="nav-title" :style="{ color: textColor }">{{ title }}</text>
-      <view class="nav-right">
-        <slot name="right"></slot>
+  <view>
+    <view class="nav-bar" :style="{ background: transparent ? 'transparent' : '#fff', paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-content">
+        <view v-if="showBack" class="nav-back" @tap="goBack">
+          <image src="/static/icons/arrow-left.svg" class="nav-back-icon" />
+        </view>
+        <text class="nav-title" :style="{ color: textColor }">{{ title }}</text>
+        <view class="nav-right">
+          <slot name="right"></slot>
+        </view>
       </view>
     </view>
+    <view class="nav-placeholder" :style="{ paddingTop: statusBarHeight + 'px' }"></view>
   </view>
 </template>
 
@@ -37,8 +40,15 @@ function goBack() {
 @use '../static/styles/theme.scss' as *;
 
 .nav-bar {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
+}
+
+.nav-placeholder {
+  height: 88rpx;
 }
 
 .nav-content {

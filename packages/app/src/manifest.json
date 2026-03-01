@@ -1,7 +1,7 @@
 {
     "name": "计工宝",
     "appid": "wx71ec9b8f839a30df",
-    "description": "计件记工与工资结算工具，帮助小型加工作坊高效管理工人计件工作量和工资。",
+    "description": "计件记工与工资结算工具，帮助小型加工作坊高效管理员工计件工作量和工资。",
     "versionName": "1.0.0",
     "versionCode": "100",
     "transformPx": false,

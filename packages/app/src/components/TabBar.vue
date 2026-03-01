@@ -64,7 +64,7 @@ function switchTab(index: number) {
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(112rpx + env(safe-area-inset-bottom));
+  height: calc(88rpx + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: $surface;
   display: flex;

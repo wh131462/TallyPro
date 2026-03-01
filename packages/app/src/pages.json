@@ -1,26 +1,161 @@
 {
   "pages": [
-    { "path": "pages/welcome/index", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/login/index", "style": { "navigationBarTitleText": "绑定手机号" } },
-    { "path": "pages/role-select/index", "style": { "navigationBarTitleText": "选择身份" } },
-    { "path": "pages/admin/dashboard/index", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/admin/workshop/index", "style": { "navigationBarTitleText": "工坊设置" } },
-    { "path": "pages/admin/workers/index", "style": { "navigationBarTitleText": "工人管理" } },
-    { "path": "pages/admin/approve/index", "style": { "navigationBarTitleText": "审批申请" } },
-    { "path": "pages/admin/skus/index", "style": { "navigationBarTitleText": "产品管理" } },
-    { "path": "pages/admin/sku-edit/index", "style": { "navigationBarTitleText": "工序管理" } },
-    { "path": "pages/admin/records/index", "style": { "navigationBarTitleText": "记录审核" } },
-    { "path": "pages/admin/settlement/index", "style": { "navigationBarTitleText": "结算管理" } },
-    { "path": "pages/admin/settlement-detail/index", "style": { "navigationBarTitleText": "结算明细" } },
-    { "path": "pages/admin/logs/index", "style": { "navigationBarTitleText": "操作日志" } },
-    { "path": "pages/worker/bind/index", "style": { "navigationBarTitleText": "绑定工坊" } },
-    { "path": "pages/worker/worklog/index", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/worker/fill/index", "style": { "navigationBarTitleText": "填写数量" } },
-    { "path": "pages/worker/history/index", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/worker/salary/index", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/profile/index", "style": { "navigationBarTitleText": "个人中心" } },
-    { "path": "pages/create-workshop/index", "style": { "navigationBarTitleText": "创建工坊" } },
-    { "path": "pages/notifications/index", "style": { "navigationBarTitleText": "消息通知" } }
+    {
+      "path": "pages/welcome/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "个人信息"
+      }
+    },
+    {
+      "path": "pages/role-select/index",
+      "style": {
+        "navigationBarTitleText": "选择身份"
+      }
+    },
+    {
+      "path": "pages/admin/dashboard/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/admin/workshop/index",
+      "style": {
+        "navigationBarTitleText": "企业设置"
+      }
+    },
+    {
+      "path": "pages/admin/workers/index",
+      "style": {
+        "navigationBarTitleText": "员工管理"
+      }
+    },
+    {
+      "path": "pages/admin/approve/index",
+      "style": {
+        "navigationBarTitleText": "审批申请"
+      }
+    },
+    {
+      "path": "pages/admin/skus/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/admin/sku-edit/index",
+      "style": {
+        "navigationBarTitleText": "工序管理"
+      }
+    },
+    {
+      "path": "pages/admin/records/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/admin/settlement/index",
+      "style": {
+        "navigationBarTitleText": "结算管理"
+      }
+    },
+    {
+      "path": "pages/admin/settlement-detail/index",
+      "style": {
+        "navigationBarTitleText": "结算明细"
+      }
+    },
+    {
+      "path": "pages/admin/logs/index",
+      "style": {
+        "navigationBarTitleText": "操作日志"
+      }
+    },
+    {
+      "path": "pages/admin/feedbacks/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/worker/bind/index",
+      "style": {
+        "navigationBarTitleText": "绑定企业"
+      }
+    },
+    {
+      "path": "pages/worker/worklog/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/worker/fill/index",
+      "style": {
+        "navigationBarTitleText": "填写数量"
+      }
+    },
+    {
+      "path": "pages/worker/history/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/worker/salary/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/create-workshop/index",
+      "style": {
+        "navigationBarTitleText": "创建企业"
+      }
+    },
+    {
+      "path": "pages/notifications/index",
+      "style": {
+        "navigationBarTitleText": "消息通知"
+      }
+    },
+    {
+      "path": "pages/about/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/feedback/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/agreement/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/privacy/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

@@ -178,6 +178,29 @@ page {
 
 /* Safe area for custom tab bar */
 .safe-bottom {
-  padding-bottom: calc(112rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
+}
+
+/* TabBar 高度占位 —— 用于仅有 TabBar 的页面底部 */
+.tab-bar-clearance {
+  height: calc(160rpx + env(safe-area-inset-bottom));
+}
+
+/* TabBar 高度占位 + 底部操作栏 —— 用于有底部按钮 + TabBar 的页面 */
+.tab-bar-clearance-with-bar {
+  height: calc(160rpx + env(safe-area-inset-bottom) + 140rpx);
+}
+
+/* 固定在 TabBar 上方的容器（底部按钮等） */
+.bottom-fixed {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: 0;
+}
+
+/* bottom-fixed 内部的 TabBar 占位，把内容推到 TabBar 上方 */
+.tab-bar-placeholder {
+  height: calc(160rpx + env(safe-area-inset-bottom));
 }
 </style>
