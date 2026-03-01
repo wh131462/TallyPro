@@ -41,7 +41,7 @@ jobs:
       - name: Build portal
         run: pnpm -C packages/portal build
         env:
-          VITE_BASE_PATH: /tally-pro/
+          VITE_BASE_PATH: /TallyPro/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
