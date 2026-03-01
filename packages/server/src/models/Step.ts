@@ -5,6 +5,7 @@ export class Step extends Model {
   declare sku_id: number;
   declare name: string;
   declare unit_price: number;
+  declare image_url: string;
   declare sort_order: number;
   declare is_active: boolean;
   declare deleted_at: Date | null;
@@ -30,6 +31,11 @@ export class Step extends Model {
         unit_price: {
           type: DataTypes.DECIMAL(10, 2),
           allowNull: false,
+        },
+        image_url: {
+          type: DataTypes.STRING(512),
+          allowNull: false,
+          defaultValue: '',
         },
         sort_order: {
           type: DataTypes.INTEGER,

@@ -20,6 +20,7 @@ import {
 } from '../models';
 import { authRequired } from '../middlewares/auth';
 import { success, fail } from '../utils/response';
+import { createNotification } from '../utils/notify';
 
 const router = Router();
 
@@ -43,7 +44,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Check ownership
     const workshop = await Workshop.findByPk(workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可创建结算单'));
+      res.status(403).json(fail('仅企业所有者可创建结算单'));
       return;
     }
 
@@ -153,6 +154,9 @@ router.post('/', async (req: Request, res: Response) => {
       ],
     });
 
+    // Notify worker about new settlement
+    createNotification(Number(worker_id), Number(workshop_id), 'settlement_created', '结算单已生成', `${period_start} ~ ${period_end} 结算单已生成，金额 ¥${settlement.total_amount}，请查看确认`);
+
     res.json(success(result));
   } catch (error) {
     console.error('create settlement error:', error);
@@ -170,14 +174,14 @@ router.get('/', async (req: Request, res: Response) => {
     const { workshop_id, worker_id, status, page = '1', page_size = '20' } = req.query;
 
     if (!workshop_id) {
-      res.status(400).json(fail('缺少工坊ID'));
+      res.status(400).json(fail('缺少企业ID'));
       return;
     }
 
     // Check access
     const workshop = await Workshop.findByPk(Number(workshop_id));
     if (!workshop) {
-      res.status(404).json(fail('工坊不存在'));
+      res.status(404).json(fail('企业不存在'));
       return;
     }
 
@@ -274,7 +278,7 @@ router.put('/:id/confirm', async (req: Request, res: Response) => {
     // Check ownership
     const workshop = await Workshop.findByPk(settlement.workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可确认结算'));
+      res.status(403).json(fail('仅企业所有者可确认结算'));
       return;
     }
 
@@ -310,6 +314,9 @@ router.put('/:id/confirm', async (req: Request, res: Response) => {
         { transaction: t }
       );
     });
+
+    // Notify worker about settlement confirmation
+    createNotification(settlement.worker_id, settlement.workshop_id, 'settlement_confirmed', '结算已确认', `您的结算单已确认，金额 ¥${settlement.total_amount}`);
 
     res.json(success({ message: '结算单已确认' }));
   } catch (error) {

@@ -59,7 +59,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { skuId } = req.params;
-    const { name, unit_price, sort_order } = req.body;
+    const { name, unit_price, sort_order, image_url } = req.body;
 
     if (!name || !name.trim()) {
       res.status(400).json(fail('工序名称不能为空'));
@@ -80,7 +80,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     const workshop = await Workshop.findByPk(sku.workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可添加工序'));
+      res.status(403).json(fail('仅企业所有者可添加工序'));
       return;
     }
 
@@ -88,6 +88,7 @@ router.post('/', async (req: Request, res: Response) => {
       sku_id: Number(skuId),
       name: name.trim(),
       unit_price: Number(unit_price),
+      image_url: image_url || '',
       sort_order: sort_order || 0,
       is_active: true,
     });
@@ -127,11 +128,11 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     const workshop = await Workshop.findByPk(sku.workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可修改工序'));
+      res.status(403).json(fail('仅企业所有者可修改工序'));
       return;
     }
 
-    const { name, unit_price, sort_order, is_active } = req.body;
+    const { name, unit_price, sort_order, is_active, image_url } = req.body;
 
     const updates: Record<string, unknown> = {};
     const beforeData: Record<string, unknown> = {};
@@ -145,6 +146,9 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
     if (is_active !== undefined) {
       updates.is_active = is_active;
+    }
+    if (image_url !== undefined) {
+      updates.image_url = image_url;
     }
 
     // Handle price change with history
@@ -202,7 +206,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
     const workshop = await Workshop.findByPk(sku.workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可删除工序'));
+      res.status(403).json(fail('仅企业所有者可删除工序'));
       return;
     }
 

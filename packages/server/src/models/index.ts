@@ -9,6 +9,8 @@ import { WorkRecord } from './WorkRecord';
 import { Settlement } from './Settlement';
 import { SettlementItem } from './SettlementItem';
 import { OperationLog } from './OperationLog';
+import { Notification } from './Notification';
+import { Feedback } from './Feedback';
 
 // ===================== Initialize Models =====================
 User.initModel(sequelize);
@@ -21,6 +23,8 @@ WorkRecord.initModel(sequelize);
 Settlement.initModel(sequelize);
 SettlementItem.initModel(sequelize);
 OperationLog.initModel(sequelize);
+Notification.initModel(sequelize);
+Feedback.initModel(sequelize);
 
 // ===================== Define Associations =====================
 
@@ -83,6 +87,13 @@ SettlementItem.belongsTo(WorkRecord, { foreignKey: 'record_id', as: 'record' });
 OperationLog.belongsTo(User, { foreignKey: 'operator_id', as: 'operator' });
 OperationLog.belongsTo(Workshop, { foreignKey: 'workshop_id', as: 'workshop' });
 
+// Notification associations
+Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+Notification.belongsTo(Workshop, { foreignKey: 'workshop_id', as: 'workshop' });
+
+// Feedback associations
+Feedback.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 export {
   sequelize,
   User,
@@ -95,4 +106,6 @@ export {
   Settlement,
   SettlementItem,
   OperationLog,
+  Notification,
+  Feedback,
 };

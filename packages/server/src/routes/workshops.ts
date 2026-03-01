@@ -13,7 +13,8 @@ import { Workshop, WorkshopMember, User } from '../models';
 import { authRequired } from '../middlewares/auth';
 import { workshopOwner } from '../middlewares/workshop';
 import { success, fail } from '../utils/response';
-import { generateInviteCode } from '../utils/helpers';
+import { generateUniqueInviteCode } from '../utils/helpers';
+import { createNotification } from '../utils/notify';
 
 const router = Router();
 
@@ -29,11 +30,14 @@ router.post('/', async (req: Request, res: Response) => {
     const { name, description } = req.body;
 
     if (!name || !name.trim()) {
-      res.status(400).json(fail('工坊名称不能为空'));
+      res.status(400).json(fail('企业名称不能为空'));
       return;
     }
 
-    const inviteCode = generateInviteCode();
+    const inviteCode = await generateUniqueInviteCode(async (code) => {
+      const existing = await Workshop.findOne({ where: { invite_code: code, status: 'active' } });
+      return !!existing;
+    });
 
     const workshop = await Workshop.create({
       owner_id: req.userId,
@@ -64,7 +68,7 @@ router.post('/', async (req: Request, res: Response) => {
     );
   } catch (error) {
     console.error('create workshop error:', error);
-    res.status(500).json(fail('创建工坊失败'));
+    res.status(500).json(fail('创建企业失败'));
   }
 });
 
@@ -83,17 +87,18 @@ router.get('/', async (req: Request, res: Response) => {
       order: [['created_at', 'DESC']],
     });
 
-    // Workshops where user is an approved member (not owner)
+    // Workshops where user is a member (approved or pending, not owner)
     const memberRecords = await WorkshopMember.findAll({
       where: {
         user_id: req.userId,
         role: 'worker',
-        status: 'approved',
+        status: { [Op.in]: ['approved', 'pending'] },
       },
-      attributes: ['workshop_id'],
+      attributes: ['workshop_id', 'status'],
     });
 
     const memberWorkshopIds = memberRecords.map((m) => m.workshop_id);
+    const memberStatusMap = new Map(memberRecords.map((m) => [m.workshop_id, m.status]));
 
     const joinedWorkshops = await Workshop.findAll({
       where: {
@@ -106,15 +111,22 @@ router.get('/', async (req: Request, res: Response) => {
       order: [['created_at', 'DESC']],
     });
 
+    // Attach member_status to each joined workshop
+    const joinedWithStatus = joinedWorkshops.map((w) => {
+      const plain = w.toJSON() as Record<string, unknown>;
+      plain.member_status = memberStatusMap.get(w.id) || 'approved';
+      return plain;
+    });
+
     res.json(
       success({
         owned: ownedWorkshops,
-        joined: joinedWorkshops,
+        joined: joinedWithStatus,
       })
     );
   } catch (error) {
     console.error('list workshops error:', error);
-    res.status(500).json(fail('获取工坊列表失败'));
+    res.status(500).json(fail('获取企业列表失败'));
   }
 });
 
@@ -140,7 +152,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     });
 
     if (!workshop) {
-      res.status(404).json(fail('工坊不存在'));
+      res.status(404).json(fail('企业不存在'));
       return;
     }
 
@@ -155,14 +167,14 @@ router.get('/:id', async (req: Request, res: Response) => {
     });
 
     if (!isOwner && !isMember) {
-      res.status(403).json(fail('无权访问该工坊'));
+      res.status(403).json(fail('无权访问该企业'));
       return;
     }
 
     res.json(success(workshop));
   } catch (error) {
     console.error('get workshop error:', error);
-    res.status(500).json(fail('获取工坊详情失败'));
+    res.status(500).json(fail('获取企业详情失败'));
   }
 });
 
@@ -176,7 +188,7 @@ router.put('/:id', workshopOwner, async (req: Request, res: Response) => {
 
     const workshop = await Workshop.findByPk(Number(req.params.id));
     if (!workshop) {
-      res.status(404).json(fail('工坊不存在'));
+      res.status(404).json(fail('企业不存在'));
       return;
     }
 
@@ -192,7 +204,7 @@ router.put('/:id', workshopOwner, async (req: Request, res: Response) => {
     res.json(success(workshop));
   } catch (error) {
     console.error('update workshop error:', error);
-    res.status(500).json(fail('更新工坊失败'));
+    res.status(500).json(fail('更新企业失败'));
   }
 });
 
@@ -204,11 +216,14 @@ router.post('/:id/invite-code', workshopOwner, async (req: Request, res: Respons
   try {
     const workshop = await Workshop.findByPk(Number(req.params.id));
     if (!workshop) {
-      res.status(404).json(fail('工坊不存在'));
+      res.status(404).json(fail('企业不存在'));
       return;
     }
 
-    const newCode = generateInviteCode();
+    const newCode = await generateUniqueInviteCode(async (code) => {
+      const existing = await Workshop.findOne({ where: { invite_code: code, status: 'active' } });
+      return !!existing;
+    });
     await workshop.update({ invite_code: newCode });
 
     res.json(
@@ -219,6 +234,49 @@ router.post('/:id/invite-code', workshopOwner, async (req: Request, res: Respons
   } catch (error) {
     console.error('regenerate invite code error:', error);
     res.status(500).json(fail('重新生成邀请码失败'));
+  }
+});
+
+/**
+ * POST /api/workshops/:id/leave
+ * Worker leaves a workshop (self-removal)
+ */
+router.post('/:id/leave', async (req: Request, res: Response) => {
+  try {
+    const workshopId = Number(req.params.id);
+
+    const workshop = await Workshop.findByPk(workshopId);
+    if (!workshop) {
+      res.status(404).json(fail('企业不存在'));
+      return;
+    }
+
+    // Owner cannot leave their own workshop
+    if (workshop.owner_id === req.userId) {
+      res.status(400).json(fail('企业所有者不能退出自己的企业，请先转让或解散'));
+      return;
+    }
+
+    const member = await WorkshopMember.findOne({
+      where: {
+        workshop_id: workshopId,
+        user_id: req.userId,
+        status: 'approved',
+        role: 'worker',
+      },
+    });
+
+    if (!member) {
+      res.status(400).json(fail('您不是该企业的成员'));
+      return;
+    }
+
+    await member.update({ status: 'removed' });
+
+    res.json(success({ message: '已退出企业' }));
+  } catch (error) {
+    console.error('leave workshop error:', error);
+    res.status(500).json(fail('退出企业失败'));
   }
 });
 
@@ -240,7 +298,7 @@ router.post('/join', async (req: Request, res: Response) => {
     });
 
     if (!workshop) {
-      res.status(404).json(fail('邀请码无效或工坊已停用'));
+      res.status(404).json(fail('邀请码无效或企业已停用'));
       return;
     }
 
@@ -252,7 +310,7 @@ router.post('/join', async (req: Request, res: Response) => {
 
     // Check if user is already the owner
     if (workshop.owner_id === req.userId) {
-      res.status(400).json(fail('您是该工坊的所有者，无需加入'));
+      res.status(400).json(fail('您是该企业的所有者，无需加入'));
       return;
     }
 
@@ -266,7 +324,7 @@ router.post('/join', async (req: Request, res: Response) => {
 
     if (existingMember) {
       if (existingMember.status === 'approved') {
-        res.status(400).json(fail('您已是该工坊成员'));
+        res.status(400).json(fail('您已是该企业成员'));
         return;
       }
       if (existingMember.status === 'pending') {
@@ -276,6 +334,8 @@ router.post('/join', async (req: Request, res: Response) => {
       if (existingMember.status === 'rejected' || existingMember.status === 'removed') {
         // Allow re-join by updating status to pending
         await existingMember.update({ status: 'pending' });
+        const applicant = await User.findByPk(req.userId, { attributes: ['nickname'] });
+        createNotification(workshop.owner_id, workshop.id, 'member_apply', '新成员申请', `${applicant?.nickname || '有人'}重新申请加入企业`);
         res.json(success({ message: '已重新提交加入申请，等待审核' }));
         return;
       }
@@ -290,16 +350,20 @@ router.post('/join', async (req: Request, res: Response) => {
       display_name: '',
     });
 
+    // Notify workshop owner
+    const applicant = await User.findByPk(req.userId, { attributes: ['nickname'] });
+    createNotification(workshop.owner_id, workshop.id, 'member_apply', '新成员申请', `${applicant?.nickname || '有人'}申请加入企业，请及时审批`);
+
     res.json(
       success({
-        message: '加入申请已提交，等待工坊主审核',
+        message: '加入申请已提交，等待企业主审核',
         workshop_id: workshop.id,
         workshop_name: workshop.name,
       })
     );
   } catch (error) {
     console.error('join workshop error:', error);
-    res.status(500).json(fail('加入工坊失败'));
+    res.status(500).json(fail('加入企业失败'));
   }
 });
 

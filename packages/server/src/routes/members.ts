@@ -4,13 +4,13 @@
  * PUT  /api/workshops/:workshopId/members/:memberId/approve       - Approve member
  * PUT  /api/workshops/:workshopId/members/:memberId/reject        - Reject member
  * PUT  /api/workshops/:workshopId/members/:memberId/remove        - Remove member
- * POST /api/workshops/:workshopId/members/add-by-phone            - Add member by phone
  */
 import { Router, Request, Response } from 'express';
-import { WorkshopMember, User, Workshop, OperationLog } from '../models';
+import { WorkshopMember, User, OperationLog, Workshop } from '../models';
 import { authRequired } from '../middlewares/auth';
 import { workshopOwner } from '../middlewares/workshop';
 import { success, fail } from '../utils/response';
+import { createNotification } from '../utils/notify';
 
 const router = Router({ mergeParams: true });
 
@@ -108,6 +108,12 @@ router.put('/:memberId/approve', workshopOwner, async (req: Request, res: Respon
       after_data: { status: 'approved' },
     });
 
+    // Notify the member
+    if (member.user_id) {
+      const workshop = await Workshop.findByPk(Number(workshopId), { attributes: ['name'] });
+      createNotification(member.user_id, Number(workshopId), 'member_approved', '申请已通过', `您加入「${workshop?.name || '企业'}」的申请已通过`);
+    }
+
     res.json(success({ message: '已审核通过' }));
   } catch (error) {
     console.error('approve member error:', error);
@@ -153,6 +159,12 @@ router.put('/:memberId/reject', workshopOwner, async (req: Request, res: Respons
       after_data: { status: 'rejected' },
     });
 
+    // Notify the member
+    if (member.user_id) {
+      const workshop = await Workshop.findByPk(Number(workshopId), { attributes: ['name'] });
+      createNotification(member.user_id, Number(workshopId), 'member_rejected', '申请被拒绝', `您加入「${workshop?.name || '企业'}」的申请被拒绝`);
+    }
+
     res.json(success({ message: '已拒绝' }));
   } catch (error) {
     console.error('reject member error:', error);
@@ -181,7 +193,7 @@ router.put('/:memberId/remove', workshopOwner, async (req: Request, res: Respons
     }
 
     if (member.role === 'owner') {
-      res.status(400).json(fail('不能移除工坊所有者'));
+      res.status(400).json(fail('不能移除企业所有者'));
       return;
     }
 
@@ -199,101 +211,16 @@ router.put('/:memberId/remove', workshopOwner, async (req: Request, res: Respons
       after_data: { status: 'removed' },
     });
 
+    // Notify the member
+    if (member.user_id) {
+      const workshop = await Workshop.findByPk(Number(workshopId), { attributes: ['name'] });
+      createNotification(member.user_id, Number(workshopId), 'member_removed', '已被移出企业', `您已被移出「${workshop?.name || '企业'}」`);
+    }
+
     res.json(success({ message: '已移除成员' }));
   } catch (error) {
     console.error('remove member error:', error);
     res.status(500).json(fail('移除成员失败'));
-  }
-});
-
-/**
- * POST /api/workshops/:workshopId/members/add-by-phone
- * Add a member by phone number (owner only)
- */
-router.post('/add-by-phone', workshopOwner, async (req: Request, res: Response) => {
-  try {
-    const { workshopId } = req.params;
-    const { phone, display_name } = req.body;
-
-    if (!phone) {
-      res.status(400).json(fail('缺少手机号'));
-      return;
-    }
-
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
-      res.status(400).json(fail('手机号格式不正确'));
-      return;
-    }
-
-    // Try to find user by phone
-    const user = await User.findOne({ where: { phone } });
-
-    if (user) {
-      // Check if already a member
-      const existingMember = await WorkshopMember.findOne({
-        where: {
-          workshop_id: Number(workshopId),
-          user_id: user.id,
-        },
-      });
-
-      if (existingMember) {
-        if (existingMember.status === 'approved') {
-          res.status(400).json(fail('该用户已是工坊成员'));
-          return;
-        }
-        // Update existing record
-        await existingMember.update({
-          status: 'approved',
-          display_name: display_name || '',
-        });
-        res.json(success({ message: '已添加成员', member_id: existingMember.id }));
-        return;
-      }
-
-      // Create approved membership directly
-      const member = await WorkshopMember.create({
-        workshop_id: Number(workshopId),
-        user_id: user.id,
-        role: 'worker',
-        status: 'approved',
-        display_name: display_name || user.nickname || '',
-      });
-
-      res.json(success({ message: '已添加成员', member_id: member.id }));
-    } else {
-      // User doesn't exist yet; create a placeholder member with invited_phone
-      const existingInvite = await WorkshopMember.findOne({
-        where: {
-          workshop_id: Number(workshopId),
-          invited_phone: phone,
-        },
-      });
-
-      if (existingInvite) {
-        res.status(400).json(fail('该手机号已被邀请'));
-        return;
-      }
-
-      const member = await WorkshopMember.create({
-        workshop_id: Number(workshopId),
-        user_id: null,
-        role: 'worker',
-        status: 'approved',
-        display_name: display_name || '',
-        invited_phone: phone,
-      });
-
-      res.json(
-        success({
-          message: '已添加成员（用户注册后将自动关联）',
-          member_id: member.id,
-        })
-      );
-    }
-  } catch (error) {
-    console.error('add-by-phone error:', error);
-    res.status(500).json(fail('添加成员失败'));
   }
 });
 

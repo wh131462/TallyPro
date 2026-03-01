@@ -3,7 +3,7 @@
  */
 
 /**
- * Generate a 6-character alphanumeric invite code
+ * Generate a 6-character alphanumeric invite code (raw, no uniqueness check)
  */
 export function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -12,6 +12,19 @@ export function generateInviteCode(): string {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+
+/**
+ * Generate a unique invite code that doesn't conflict with existing workshops
+ */
+export async function generateUniqueInviteCode(
+  existsCheck: (code: string) => Promise<boolean>
+): Promise<string> {
+  for (let i = 0; i < 10; i++) {
+    const code = generateInviteCode();
+    if (!(await existsCheck(code))) return code;
+  }
+  throw new Error('无法生成唯一邀请码，请重试');
 }
 
 /**

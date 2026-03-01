@@ -1,7 +1,7 @@
 /**
  * Auth Routes
  * POST /api/auth/wx-login    - WeChat login
- * POST /api/auth/bind-phone  - Bind phone number (requires auth)
+ * PUT  /api/auth/profile     - Update user profile (requires auth)
  * GET  /api/auth/profile     - Get current user profile (requires auth)
  */
 import { Router, Request, Response } from 'express';
@@ -53,7 +53,7 @@ router.post('/wx-login', async (req: Request, res: Response) => {
       where: { openid },
       defaults: {
         openid,
-        nickname: '',
+        nickname: `用户${Date.now().toString().slice(-6)}`,
         phone: '',
         avatar_url: '',
       },
@@ -82,23 +82,12 @@ router.post('/wx-login', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/auth/bind-phone
- * Bind phone number to current user (requires auth)
+ * PUT /api/auth/profile
+ * Update current user profile (nickname, avatar_url) (requires auth)
  */
-router.post('/bind-phone', authRequired, async (req: Request, res: Response) => {
+router.put('/profile', authRequired, async (req: Request, res: Response) => {
   try {
-    const { phone } = req.body;
-
-    if (!phone) {
-      res.status(400).json(fail('缺少手机号'));
-      return;
-    }
-
-    // Validate phone format (Chinese mobile)
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
-      res.status(400).json(fail('手机号格式不正确'));
-      return;
-    }
+    const { nickname, avatar_url } = req.body;
 
     const user = await User.findByPk(req.userId);
     if (!user) {
@@ -106,24 +95,35 @@ router.post('/bind-phone', authRequired, async (req: Request, res: Response) => 
       return;
     }
 
-    // Check if phone is already used by another user
-    const existing = await User.findOne({ where: { phone } });
-    if (existing && existing.id !== req.userId) {
-      res.status(400).json(fail('该手机号已被其他用户绑定'));
+    const updates: Record<string, unknown> = {};
+    if (nickname !== undefined) {
+      if (!nickname.trim()) {
+        res.status(400).json(fail('昵称不能为空'));
+        return;
+      }
+      updates.nickname = nickname.trim();
+    }
+    if (avatar_url !== undefined) {
+      updates.avatar_url = avatar_url;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json(fail('没有需要更新的字段'));
       return;
     }
 
-    await user.update({ phone });
+    await user.update(updates);
 
     res.json(
       success({
         id: user.id,
-        phone: user.phone,
+        nickname: user.nickname,
+        avatar_url: user.avatar_url,
       })
     );
   } catch (error) {
-    console.error('bind-phone error:', error);
-    res.status(500).json(fail('绑定手机号失败'));
+    console.error('update profile error:', error);
+    res.status(500).json(fail('更新个人信息失败'));
   }
 });
 

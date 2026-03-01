@@ -122,7 +122,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     // Check ownership
     const workshop = await Workshop.findByPk(sku.workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可修改产品'));
+      res.status(403).json(fail('仅企业所有者可修改产品'));
       return;
     }
 
@@ -159,7 +159,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     // Check ownership
     const workshop = await Workshop.findByPk(sku.workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可删除产品'));
+      res.status(403).json(fail('仅企业所有者可删除产品'));
       return;
     }
 

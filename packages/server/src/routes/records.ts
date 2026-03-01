@@ -12,6 +12,7 @@ import { Op } from 'sequelize';
 import { sequelize, WorkRecord, Step, Sku, Workshop, User, WorkshopMember, OperationLog } from '../models';
 import { authRequired } from '../middlewares/auth';
 import { success, fail } from '../utils/response';
+import { createNotification } from '../utils/notify';
 
 const router = Router();
 
@@ -35,7 +36,7 @@ router.post('/batch', async (req: Request, res: Response) => {
     // Check user is a member of the workshop
     const workshop = await Workshop.findByPk(workshop_id);
     if (!workshop) {
-      res.status(404).json(fail('工坊不存在'));
+      res.status(404).json(fail('企业不存在'));
       return;
     }
 
@@ -49,7 +50,7 @@ router.post('/batch', async (req: Request, res: Response) => {
         },
       });
       if (!member) {
-        res.status(403).json(fail('您不是该工坊的成员'));
+        res.status(403).json(fail('您不是该企业的成员'));
         return;
       }
     }
@@ -121,6 +122,12 @@ router.post('/batch', async (req: Request, res: Response) => {
       return result;
     });
 
+    // Notify workshop owner about new records
+    if (!isOwner) {
+      const worker = await User.findByPk(req.userId, { attributes: ['nickname'] });
+      createNotification(workshop.owner_id, workshop.id, 'record_submitted', '新记录待审核', `${worker?.nickname || '员工'}提交了 ${createdRecords.length} 条记工记录，请及时审核`);
+    }
+
     res.json(success(createdRecords));
   } catch (error) {
     console.error('batch create records error:', error);
@@ -147,14 +154,14 @@ router.get('/', async (req: Request, res: Response) => {
     } = req.query;
 
     if (!workshop_id) {
-      res.status(400).json(fail('缺少工坊ID'));
+      res.status(400).json(fail('缺少企业ID'));
       return;
     }
 
     // Check user has access to workshop
     const workshop = await Workshop.findByPk(Number(workshop_id));
     if (!workshop) {
-      res.status(404).json(fail('工坊不存在'));
+      res.status(404).json(fail('企业不存在'));
       return;
     }
 
@@ -168,7 +175,7 @@ router.get('/', async (req: Request, res: Response) => {
         },
       });
       if (!member) {
-        res.status(403).json(fail('您不是该工坊的成员'));
+        res.status(403).json(fail('您不是该企业的成员'));
         return;
       }
     }
@@ -246,7 +253,7 @@ router.put('/:id/confirm', async (req: Request, res: Response) => {
     // Check ownership
     const workshop = await Workshop.findByPk(record.workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可确认记录'));
+      res.status(403).json(fail('仅企业所有者可确认记录'));
       return;
     }
 
@@ -271,6 +278,9 @@ router.put('/:id/confirm', async (req: Request, res: Response) => {
       before_data: { status: beforeStatus },
       after_data: { status: 'confirmed', confirmed_quantity: record.quantity },
     });
+
+    // Notify worker
+    createNotification(record.worker_id, record.workshop_id, 'record_confirmed', '记录已确认', `您 ${record.work_date} 的记工记录已被确认`);
 
     res.json(success(record));
   } catch (error) {
@@ -306,7 +316,7 @@ router.put('/:id/modify', async (req: Request, res: Response) => {
     // Check ownership
     const workshop = await Workshop.findByPk(record.workshop_id);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可修改记录'));
+      res.status(403).json(fail('仅企业所有者可修改记录'));
       return;
     }
 
@@ -344,6 +354,9 @@ router.put('/:id/modify', async (req: Request, res: Response) => {
       remark: modify_reason,
     });
 
+    // Notify worker about modification
+    createNotification(record.worker_id, record.workshop_id, 'record_modified', '记录被修改', `管理员将您 ${record.work_date} 的记录数量修改为 ${confirmed_quantity}，原因：${modify_reason}`);
+
     res.json(success(record));
   } catch (error) {
     console.error('modify record error:', error);
@@ -377,13 +390,13 @@ router.post('/batch-confirm', async (req: Request, res: Response) => {
     // Check all records belong to same workshop and user is owner
     const workshopIds = [...new Set(records.map((r) => r.workshop_id))];
     if (workshopIds.length > 1) {
-      res.status(400).json(fail('批量确认的记录必须属于同一个工坊'));
+      res.status(400).json(fail('批量确认的记录必须属于同一个企业'));
       return;
     }
 
     const workshop = await Workshop.findByPk(workshopIds[0]);
     if (!workshop || workshop.owner_id !== req.userId) {
-      res.status(403).json(fail('仅工坊所有者可确认记录'));
+      res.status(403).json(fail('仅企业所有者可确认记录'));
       return;
     }
 
@@ -415,6 +428,13 @@ router.post('/batch-confirm', async (req: Request, res: Response) => {
         { transaction: t }
       );
     });
+
+    // Notify affected workers
+    const workerIds = [...new Set(confirmableRecords.map((r) => r.worker_id))];
+    for (const workerId of workerIds) {
+      const count = confirmableRecords.filter((r) => r.worker_id === workerId).length;
+      createNotification(workerId, workshop.id, 'record_confirmed', '记录已确认', `您有 ${count} 条记工记录已被批量确认`);
+    }
 
     res.json(
       success({
@@ -523,14 +543,14 @@ router.get('/summary', async (req: Request, res: Response) => {
     const { workshop_id, worker_id, work_date_start, work_date_end } = req.query;
 
     if (!workshop_id) {
-      res.status(400).json(fail('缺少工坊ID'));
+      res.status(400).json(fail('缺少企业ID'));
       return;
     }
 
     // Check access
     const workshop = await Workshop.findByPk(Number(workshop_id));
     if (!workshop) {
-      res.status(404).json(fail('工坊不存在'));
+      res.status(404).json(fail('企业不存在'));
       return;
     }
 
@@ -544,7 +564,7 @@ router.get('/summary', async (req: Request, res: Response) => {
         },
       });
       if (!member) {
-        res.status(403).json(fail('您不是该工坊的成员'));
+        res.status(403).json(fail('您不是该企业的成员'));
         return;
       }
     }
@@ -570,6 +590,14 @@ router.get('/summary', async (req: Request, res: Response) => {
     const totalModified = await WorkRecord.count({ where: { ...where, status: 'modified' } });
     const totalSettled = await WorkRecord.count({ where: { ...where, status: 'settled' } });
 
+    // Count approved workers (exclude owner)
+    const workerCount = await WorkshopMember.count({
+      where: {
+        workshop_id: Number(workshop_id),
+        status: 'approved',
+      },
+    });
+
     // Calculate total amount for confirmed + modified + settled records
     const confirmedRecords = await WorkRecord.findAll({
       where: {
@@ -593,6 +621,7 @@ router.get('/summary', async (req: Request, res: Response) => {
         total_settled: totalSettled,
         total_records: totalPending + totalConfirmed + totalModified + totalSettled,
         total_amount: Math.round(totalAmount * 100) / 100,
+        worker_count: workerCount,
       })
     );
   } catch (error) {

@@ -18,13 +18,13 @@ export function workshopMember(req: Request, res: Response, next: NextFunction):
       );
 
       if (!workshopId) {
-        res.status(400).json(fail('缺少工坊ID'));
+        res.status(400).json(fail('缺少企业ID'));
         return;
       }
 
       const workshop = await Workshop.findByPk(workshopId);
       if (!workshop) {
-        res.status(404).json(fail('工坊不存在'));
+        res.status(404).json(fail('企业不存在'));
         return;
       }
 
@@ -44,7 +44,7 @@ export function workshopMember(req: Request, res: Response, next: NextFunction):
       });
 
       if (!member) {
-        res.status(403).json(fail('您不是该工坊的成员'));
+        res.status(403).json(fail('您不是该企业的成员'));
         return;
       }
 
@@ -67,18 +67,18 @@ export function workshopOwner(req: Request, res: Response, next: NextFunction): 
       );
 
       if (!workshopId) {
-        res.status(400).json(fail('缺少工坊ID'));
+        res.status(400).json(fail('缺少企业ID'));
         return;
       }
 
       const workshop = await Workshop.findByPk(workshopId);
       if (!workshop) {
-        res.status(404).json(fail('工坊不存在'));
+        res.status(404).json(fail('企业不存在'));
         return;
       }
 
       if (workshop.owner_id !== req.userId) {
-        res.status(403).json(fail('仅工坊所有者可执行此操作'));
+        res.status(403).json(fail('仅企业所有者可执行此操作'));
         return;
       }
 
