@@ -4,6 +4,8 @@ services:
     image: mysql:8.0
     container_name: tally-pro-mysql
     restart: unless-stopped
+    env_file:
+      - ../configs/.env.production
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-tally_pro_root}
       MYSQL_DATABASE: ${DB_NAME:-tally_pro}
