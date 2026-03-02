@@ -3,7 +3,17 @@
     <NavBar title="个人中心" />
 
     <!-- Profile Header -->
-    <view class="profile-header" @tap="goTo('/pages/login/index')">
+    <view v-if="isGuest" class="profile-header guest-header" @tap="goLogin">
+      <view class="profile-avatar guest-avatar">
+        <image src="/static/icons/profile.svg" class="avatar-icon" />
+      </view>
+      <view class="profile-info">
+        <text class="profile-name">登录 / 注册</text>
+        <text class="profile-id">登录后解锁全部功能</text>
+      </view>
+      <text class="item-arrow">›</text>
+    </view>
+    <view v-else class="profile-header" @tap="goTo('/pages/login/index')">
       <view class="profile-avatar">
         <image
           v-if="userInfo?.avatar_url"
@@ -21,46 +31,48 @@
     </view>
 
     <!-- Workshop Switch -->
-    <text class="section-title">身份切换</text>
-    <view class="card" style="padding: 0; overflow: hidden;">
-      <view
-        class="list-item"
-        v-for="(ws, i) in workshops"
-        :key="i"
-        @tap="switchWorkshop(ws)"
-      >
-        <view class="icon-box" :style="{ background: ws.role === 'owner' ? 'rgba(200,149,108,0.12)' : '#E8F2EC' }">
-          <image
-            v-if="ws.logo_url"
-            :src="getImageUrl(ws.logo_url)"
-            class="icon-logo"
-            mode="aspectFill"
-          />
-          <image v-else :src="ws.role === 'owner' ? '/static/icons/factory.svg' : '/static/icons/worker.svg'" class="icon-img" />
+    <template v-if="!isGuest">
+      <text class="section-title">身份切换</text>
+      <view class="card" style="padding: 0; overflow: hidden;">
+        <view
+          class="list-item"
+          v-for="(ws, i) in workshops"
+          :key="i"
+          @tap="switchWorkshop(ws)"
+        >
+          <view class="icon-box" :style="{ background: ws.role === 'owner' ? 'rgba(200,149,108,0.12)' : '#E8F2EC' }">
+            <image
+              v-if="ws.logo_url"
+              :src="getImageUrl(ws.logo_url)"
+              class="icon-logo"
+              mode="aspectFill"
+            />
+            <image v-else :src="ws.role === 'owner' ? '/static/icons/factory.svg' : '/static/icons/worker.svg'" class="icon-img" />
+          </view>
+          <view class="item-content">
+            <text class="item-title">{{ ws.name }}</text>
+            <text class="item-desc">{{ ws.role === 'owner' ? '管理员 (企业主)' : ws.isOwnerWorkerMode ? '员工模式 · 记工填报' : '员工' }}</text>
+          </view>
+          <view v-if="!ws.isOwnerWorkerMode" class="ws-remove-btn" @tap.stop="onRemoveWs(ws)">
+            <text class="ws-remove-icon">&times;</text>
+          </view>
         </view>
-        <view class="item-content">
-          <text class="item-title">{{ ws.name }}</text>
-          <text class="item-desc">{{ ws.role === 'owner' ? '管理员 (企业主)' : ws.isOwnerWorkerMode ? '员工模式 · 记工填报' : '员工' }}</text>
+        <view v-if="workshops.length === 0" class="empty-ws">
+          <text class="empty-text">暂未加入任何企业</text>
         </view>
-        <view v-if="!ws.isOwnerWorkerMode" class="ws-remove-btn" @tap.stop="onRemoveWs(ws)">
-          <text class="ws-remove-icon">&times;</text>
+        <!-- 添加身份入口 -->
+        <view class="list-item add-identity-item" @tap="goTo('/pages/role-select/index?mode=add')">
+          <view class="icon-box" style="background: rgba(200,149,108,0.08);">
+            <text class="add-icon">+</text>
+          </view>
+          <view class="item-content">
+            <text class="item-title" style="color: rgba(200,149,108,1);">添加新身份</text>
+            <text class="item-desc">创建企业或加入其他企业</text>
+          </view>
+          <text class="item-arrow">›</text>
         </view>
       </view>
-      <view v-if="workshops.length === 0" class="empty-ws">
-        <text class="empty-text">暂未加入任何企业</text>
-      </view>
-      <!-- 添加身份入口 -->
-      <view class="list-item add-identity-item" @tap="goTo('/pages/role-select/index?mode=add')">
-        <view class="icon-box" style="background: rgba(200,149,108,0.08);">
-          <text class="add-icon">+</text>
-        </view>
-        <view class="item-content">
-          <text class="item-title" style="color: rgba(200,149,108,1);">添加新身份</text>
-          <text class="item-desc">创建企业或加入其他企业</text>
-        </view>
-        <text class="item-arrow">›</text>
-      </view>
-    </view>
+    </template>
 
     <!-- Settings -->
     <text class="section-title">设置</text>
@@ -95,7 +107,7 @@
     </view>
 
     <!-- Logout -->
-    <view style="padding: 40rpx 28rpx;">
+    <view v-if="!isGuest" style="padding: 40rpx 28rpx;">
       <button class="btn-danger" @tap="logout">退出登录</button>
     </view>
 
@@ -112,8 +124,11 @@ import { onShow } from '@dcloudio/uni-app';
 import { api, getImageUrl } from '../../utils/request';
 import { getUserInfo, setCurrentWorkshop, getCurrentWorkshop, clearAll } from '../../utils/storage';
 import { removeToken } from '../../utils/request';
+import { isGuestMode } from '../../utils/auth';
 import NavBar from '../../components/NavBar.vue';
 import TabBar from '../../components/TabBar.vue';
+
+const isGuest = computed(() => isGuestMode());
 
 const userInfo = ref(getUserInfo());
 const workshop = getCurrentWorkshop();
@@ -131,6 +146,10 @@ const workshops = ref<WorkshopItem[]>([]);
 
 function goTo(path: string) {
   uni.navigateTo({ url: path });
+}
+
+function goLogin() {
+  uni.navigateTo({ url: '/pages/welcome/index' });
 }
 
 function switchWorkshop(ws: WorkshopItem) {
@@ -196,7 +215,7 @@ function logout() {
       if (res.confirm) {
         removeToken();
         clearAll();
-        uni.reLaunch({ url: '/pages/welcome/index' });
+        uni.reLaunch({ url: '/pages/landing/index' });
       }
     },
   });
@@ -243,6 +262,22 @@ onShow(() => {
   display: flex;
   align-items: center;
   gap: 36rpx;
+}
+
+.guest-header {
+  .profile-name {
+    color: $amber;
+  }
+  .profile-id {
+    color: $ink-faint;
+  }
+}
+
+.guest-avatar {
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.2), transparent),
+    linear-gradient(135deg, $ink-faint 0%, $ink-muted 100%);
+  box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.1);
 }
 
 .profile-avatar {

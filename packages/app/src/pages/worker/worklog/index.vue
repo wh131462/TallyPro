@@ -86,6 +86,7 @@ import TabBar from '../../../components/TabBar.vue';
 import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop, setCurrentWorkshop } from '../../../utils/storage';
 import { formatDate, getToday, addDays, isToday } from '../../../utils/date';
+import { requireLogin } from '../../../utils/auth';
 
 interface FrequentStep {
   id: number;
@@ -136,6 +137,7 @@ function getSkuIcon(icon?: string): string {
 }
 
 function goFill(skuId: number, name?: string) {
+  if (!requireLogin()) return;
   const skuName = encodeURIComponent(name || '');
   uni.navigateTo({
     url: `/pages/worker/fill/index?skuId=${skuId}&skuName=${skuName}&date=${currentDate.value}`,
@@ -173,7 +175,7 @@ function switchWorkshop() {
 
 async function loadSkus() {
   const workshop = getCurrentWorkshop();
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   workshopName.value = workshop.name;
   try {
     const res = await api.get<any>(`/workshops/${workshop.id}/skus`);

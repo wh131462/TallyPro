@@ -75,7 +75,7 @@ const qrValue = computed(() => {
 });
 
 onMounted(async () => {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     const res = await api.get<any>(`/workshops/${workshop.id}`);
     form.value.name = res.data.name;
@@ -99,7 +99,7 @@ async function changeLogo() {
 }
 
 async function saveWorkshop() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     await api.put(`/workshops/${workshop.id}`, form.value as any);
     uni.showToast({ title: '保存成功', icon: 'success' });
@@ -116,7 +116,7 @@ function copyCode() {
 }
 
 async function regenerateCode() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     const res = await api.post<any>(`/workshops/${workshop.id}/invite-code`);
     inviteCode.value = res.data.invite_code;

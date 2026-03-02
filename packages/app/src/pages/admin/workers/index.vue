@@ -198,7 +198,7 @@ function copyCode() {
 }
 
 async function refreshCode() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     const res = await api.post<any>(`/workshops/${workshop.id}/invite-code`);
     inviteCode.value = res.data?.invite_code || inviteCode.value;
@@ -209,7 +209,7 @@ async function refreshCode() {
 }
 
 async function loadInviteCode() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     const res = await api.get<any>(`/workshops/${workshop.id}`);
     inviteCode.value = res.data?.invite_code || '';
@@ -219,7 +219,7 @@ async function loadInviteCode() {
 }
 
 async function loadWorkers() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     const res = await api.get<any>(`/workshops/${workshop.id}/members`);
     const list = res.data || [];

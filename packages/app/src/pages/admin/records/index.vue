@@ -269,7 +269,7 @@ async function confirmModify() {
 }
 
 async function confirmRecord(record: Record) {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     await api.put(`/records/${record.id}/confirm`, {} as any);
     uni.showToast({ title: '已确认', icon: 'success' });
@@ -280,7 +280,7 @@ async function confirmRecord(record: Record) {
 }
 
 async function batchConfirm() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   uni.showModal({
     title: '批量确认',
     content: `确定要确认全部 ${pendingCount.value} 条待审核记录吗？`,
@@ -304,7 +304,7 @@ async function batchConfirm() {
 }
 
 async function loadRecords() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     let url = `/records?workshop_id=${workshop.id}`;
     if (pendingMode.value) {

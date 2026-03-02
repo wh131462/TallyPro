@@ -32,7 +32,7 @@ const sysInfo = uni.getSystemInfoSync();
 statusBarHeight.value = sysInfo.statusBarHeight || 44;
 
 function goBack() {
-  uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/welcome/index' }) });
+  uni.navigateBack({ fail: () => uni.reLaunch({ url: '/pages/landing/index' }) });
 }
 </script>
 

@@ -121,7 +121,7 @@ function mapLogIcon(type: string): { icon: string; iconBg: string; action: strin
 }
 
 onMounted(async () => {
-  if (!workshop) {
+  if (!workshop || !workshop.id) {
     loading.value = false;
     return;
   }

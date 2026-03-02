@@ -110,7 +110,7 @@ function nextMonth() {
 
 async function fetchSalary() {
   const workshop = getCurrentWorkshop();
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   workshopName.value = workshop.name;
   try {
     const res = await api.get<any>(`/records/worker-salary?workshop_id=${workshop.id}&year=${currentYear.value}&month=${currentMonth.value}`);

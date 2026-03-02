@@ -106,6 +106,7 @@ import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
 import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop, getUserInfo } from '../../../utils/storage';
+import { requireLogin } from '../../../utils/auth';
 
 const workshop = getCurrentWorkshop();
 const userName = ref(getUserInfo()?.nickname || '老板');
@@ -133,6 +134,7 @@ const tabPages = [
 ];
 
 function goTo(path: string) {
+  if (!requireLogin()) return;
   const basePath = path.split('?')[0];
   if (tabPages.includes(basePath)) {
     uni.redirectTo({ url: path });
@@ -146,7 +148,7 @@ onShow(() => {
 });
 
 onMounted(async () => {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     const res = await api.get<any>(`/records/summary?workshop_id=${workshop.id}`);
     if (res.data) {

@@ -128,7 +128,7 @@ async function handleSubmit() {
   }
 
   const workshop = getCurrentWorkshop();
-  if (!workshop) {
+  if (!workshop || !workshop.id) {
     uni.showToast({ title: '请先选择企业', icon: 'none' });
     return;
   }

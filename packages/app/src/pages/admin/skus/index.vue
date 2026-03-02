@@ -153,7 +153,7 @@ function addSku() {
 }
 
 async function loadSkus() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     const res = await api.get<any>(`/workshops/${workshop.id}/skus`);
     const list = res.data || [];

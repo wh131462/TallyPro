@@ -104,7 +104,7 @@ function createSettlement() {
 }
 
 async function loadSettlements() {
-  if (!workshop) {
+  if (!workshop || !workshop.id) {
     loading.value = false;
     return;
   }

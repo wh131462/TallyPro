@@ -101,7 +101,7 @@ function onEndChange(e: any) {
 }
 
 async function loadWorkers() {
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   try {
     const res = await api.get<any>(`/workshops/${workshop.id}/members`);
     const list = res.data || [];

@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
-import { getToken } from "./utils/request";
 
 onLaunch(() => {
   console.log("App Launch");
-  const token = getToken();
-  if (!token) {
-    uni.reLaunch({ url: '/pages/welcome/index' });
-  }
 });
 onShow(() => {
   console.log("App Show");

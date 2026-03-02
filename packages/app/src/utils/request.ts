@@ -25,9 +25,27 @@ export function removeToken() {
   uni.removeStorageSync('token');
 }
 
+let _guestRedirecting = false;
+
 export function request<T = unknown>(options: RequestOptions): Promise<ApiResponse<T>> {
   return new Promise((resolve, reject) => {
     const token = getToken();
+
+    // 游客模式：非登录接口处理
+    if (!token && !options.url.startsWith('/auth/')) {
+      // 写操作（POST/PUT/DELETE）：跳转登录页
+      if (options.method && options.method !== 'GET' && !_guestRedirecting) {
+        _guestRedirecting = true;
+        uni.navigateTo({
+          url: '/pages/welcome/index',
+          fail: () => uni.reLaunch({ url: '/pages/welcome/index' }),
+        });
+        setTimeout(() => { _guestRedirecting = false; }, 2000);
+      }
+      reject(new Error('NOT_LOGGED_IN'));
+      return;
+    }
+
     uni.request({
       url: `${BASE_URL}${options.url}`,
       method: options.method || 'GET',
@@ -43,7 +61,11 @@ export function request<T = unknown>(options: RequestOptions): Promise<ApiRespon
           resolve(data);
         } else if (data.code === 401) {
           removeToken();
-          uni.reLaunch({ url: '/pages/welcome/index' });
+          const pages = getCurrentPages();
+          const route = '/' + (pages[pages.length - 1] as any).route;
+          if (route !== '/pages/landing/index' && route !== '/pages/welcome/index') {
+            uni.reLaunch({ url: '/pages/landing/index' });
+          }
           reject(new Error(data.message));
         } else {
           uni.showToast({ title: data.message || '请求失败', icon: 'none' });
@@ -71,18 +93,26 @@ export const api = {
  */
 export function chooseAndUploadImage(): Promise<string> {
   return new Promise((resolve, reject) => {
+    const token = getToken();
+    if (!token) {
+      uni.navigateTo({
+        url: '/pages/welcome/index',
+        fail: () => uni.reLaunch({ url: '/pages/welcome/index' }),
+      });
+      reject(new Error('NOT_LOGGED_IN'));
+      return;
+    }
     uni.chooseImage({
       count: 1,
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
       success(chooseRes) {
         const tempFilePath = chooseRes.tempFilePaths[0];
-        const token = getToken();
         uni.uploadFile({
           url: `${BASE_URL}/upload`,
           filePath: tempFilePath,
           name: 'file',
-          header: token ? { Authorization: `Bearer ${token}` } : {},
+          header: { Authorization: `Bearer ${token}` },
           success(uploadRes) {
             try {
               const data = JSON.parse(uploadRes.data) as ApiResponse<{ url: string }>;

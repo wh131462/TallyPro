@@ -146,7 +146,7 @@ function getStatusLabel(status: string): string {
 
 onMounted(async () => {
   const workshop = getCurrentWorkshop();
-  if (!workshop) return;
+  if (!workshop || !workshop.id) return;
   workshopName.value = workshop.name;
   try {
     const res = await api.get<any>(`/records?workshop_id=${workshop.id}&page_size=100`);
