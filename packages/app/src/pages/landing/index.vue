@@ -66,17 +66,36 @@
       <text class="login-link-action">立即登录</text>
     </view>
 
+    <!-- Share Button -->
+    <view class="share-section">
+      <button class="share-btn" open-type="share">
+        <text class="share-btn-text">&#x1F4E8; 分享给好友</text>
+      </button>
+    </view>
+
     <!-- Footer -->
     <view class="footer">
       <text class="footer-copy">&copy; 2025 计工宝 All Rights Reserved</text>
     </view>
+
+    <!-- 隐藏的分享图片 Canvas -->
+    <canvas canvas-id="shareCanvas" class="share-canvas" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app';
+import { getCurrentInstance } from 'vue';
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getToken } from '../../utils/request';
 import { getCurrentWorkshop, setCurrentWorkshop } from '../../utils/storage';
+import { getShareConfig, generateShareCard } from '../../utils/share';
+
+const share = getShareConfig();
+onShareAppMessage(share.appMessage);
+onShareTimeline(share.timeline);
+
+const instance = getCurrentInstance();
+generateShareCard(instance);
 
 onShow(() => {
   const token = getToken();
@@ -346,6 +365,35 @@ function goLogin() {
   font-weight: 600;
 }
 
+// ── Share ──
+.share-section {
+  display: flex;
+  justify-content: center;
+  padding: 0 36rpx;
+}
+
+.share-btn {
+  background: transparent !important;
+  border: 2rpx solid $cream-deep !important;
+  border-radius: 40rpx;
+  padding: 16rpx 48rpx !important;
+  margin: 0;
+  line-height: normal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::after {
+    border: none !important;
+  }
+}
+
+.share-btn-text {
+  font-size: 24rpx;
+  color: $ink-faint;
+  letter-spacing: 2rpx;
+}
+
 // ── Footer ──
 .footer {
   display: flex;
@@ -359,5 +407,13 @@ function goLogin() {
   color: $ink-faint;
   letter-spacing: 1rpx;
   opacity: 0.5;
+}
+
+.share-canvas {
+  position: fixed;
+  left: -9999rpx;
+  top: -9999rpx;
+  width: 500px;
+  height: 400px;
 }
 </style>

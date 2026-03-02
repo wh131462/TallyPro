@@ -57,6 +57,7 @@ page {
   color: #fff;
   border: none;
   letter-spacing: 1rpx;
+  white-space: nowrap;
 
   &::after {
     display: none;
@@ -77,6 +78,7 @@ page {
   color: $amber;
   border: 3rpx solid $amber-light;
   letter-spacing: 1rpx;
+  white-space: nowrap;
 
   &::after {
     display: none;

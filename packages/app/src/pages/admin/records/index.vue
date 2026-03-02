@@ -149,12 +149,18 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { api } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 import { formatDate, getToday, addDays } from '../../../utils/date';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
 import PreviewBanner from '../../../components/PreviewBanner.vue';
+import { getShareConfig } from '../../../utils/share';
+
+const share = getShareConfig();
+onShareAppMessage(share.appMessage);
+onShareTimeline(share.timeline);
 
 interface Record {
   id: number;

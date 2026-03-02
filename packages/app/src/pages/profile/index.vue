@@ -120,13 +120,18 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { api, getImageUrl } from '../../utils/request';
 import { getUserInfo, setCurrentWorkshop, getCurrentWorkshop, clearAll } from '../../utils/storage';
 import { removeToken } from '../../utils/request';
 import { isGuestMode } from '../../utils/auth';
+import { getShareConfig } from '../../utils/share';
 import NavBar from '../../components/NavBar.vue';
 import TabBar from '../../components/TabBar.vue';
+
+const share = getShareConfig();
+onShareAppMessage(share.appMessage);
+onShareTimeline(share.timeline);
 
 const isGuest = computed(() => isGuestMode());
 

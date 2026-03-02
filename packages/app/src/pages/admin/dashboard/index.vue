@@ -102,13 +102,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
 import PreviewBanner from '../../../components/PreviewBanner.vue';
 import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop, getUserInfo } from '../../../utils/storage';
 import { requireLogin } from '../../../utils/auth';
+import { getShareConfig } from '../../../utils/share';
+
+const share = getShareConfig();
+onShareAppMessage(share.appMessage);
+onShareTimeline(share.timeline);
 
 const workshop = getCurrentWorkshop();
 const userName = ref(getUserInfo()?.nickname || '老板');

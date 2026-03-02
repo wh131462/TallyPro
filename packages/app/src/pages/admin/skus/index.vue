@@ -65,12 +65,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 import NavBar from '../../../components/NavBar.vue';
 import PreviewBanner from '../../../components/PreviewBanner.vue';
 import TabBar from '../../../components/TabBar.vue';
+import { getShareConfig } from '../../../utils/share';
+
+const share = getShareConfig();
+onShareAppMessage(share.appMessage);
+onShareTimeline(share.timeline);
 
 interface Sku {
   id: number;

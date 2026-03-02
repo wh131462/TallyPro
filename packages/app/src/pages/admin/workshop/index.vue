@@ -278,5 +278,12 @@ function disableWorkshop() {
   display: flex;
   gap: 16rpx;
   margin-top: 16rpx;
+
+  .btn-outline,
+  .btn-primary {
+    font-size: 24rpx;
+    height: 72rpx;
+    padding: 0 12rpx;
+  }
 }
 </style>

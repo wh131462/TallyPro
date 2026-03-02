@@ -570,6 +570,8 @@ onMounted(() => {
   background: $cream;
   border-radius: $radius-sm;
   border: none;
+  white-space: nowrap;
+  padding: 0 16rpx;
 
   &::after {
     border: none;
@@ -586,6 +588,8 @@ onMounted(() => {
   background: $ink;
   border-radius: $radius-sm;
   border: none;
+  white-space: nowrap;
+  padding: 0 16rpx;
 
   &::after {
     border: none;
