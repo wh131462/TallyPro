@@ -1,6 +1,7 @@
 <template>
   <view class="salary-page">
     <NavBar title="" :transparent="true" textColor="#fff" />
+    <PreviewBanner />
 
       <!-- Workshop Name -->
       <view class="workshop-bar-overlay" v-if="workshopName">
@@ -65,6 +66,7 @@
 import { ref, computed, onMounted } from 'vue';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
+import PreviewBanner from '../../../components/PreviewBanner.vue';
 import { api } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 

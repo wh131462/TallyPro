@@ -86,7 +86,7 @@ async function wxLogin(code: string) {
     const res = await api.post<{ token: string; user: any; isNew: boolean }>('/auth/wx-login', { code });
     setToken(res.data.token);
     setUserInfo(res.data.user);
-    uni.redirectTo({ url: '/pages/role-select/index' });
+    uni.reLaunch({ url: '/pages/role-select/index' });
   } catch (e) {
     console.error(e);
   }
@@ -97,9 +97,9 @@ async function mockLogin() {
     const res = await api.post<{ token: string; user: any; isNew: boolean }>('/auth/wx-login', { code: 'mock_code' });
     setToken(res.data.token);
     setUserInfo(res.data.user);
-    uni.redirectTo({ url: '/pages/role-select/index' });
+    uni.reLaunch({ url: '/pages/role-select/index' });
   } catch {
-    uni.redirectTo({ url: '/pages/role-select/index' });
+    uni.reLaunch({ url: '/pages/role-select/index' });
   }
 }
 </script>

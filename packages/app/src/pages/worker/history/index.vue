@@ -1,6 +1,7 @@
 <template>
   <view class="history-page">
     <NavBar title="历史记录" />
+    <PreviewBanner />
 
       <!-- Workshop Name -->
       <view class="workshop-bar" v-if="workshopName">
@@ -70,6 +71,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import NavBar from '../../../components/NavBar.vue';
+import PreviewBanner from '../../../components/PreviewBanner.vue';
 import TabBar from '../../../components/TabBar.vue';
 import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';

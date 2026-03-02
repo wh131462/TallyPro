@@ -1,6 +1,7 @@
 <template>
   <view class="records-page">
     <NavBar :title="pendingMode ? '待审核记录' : '记录审核'" />
+    <PreviewBanner />
 
     <!-- Pending Mode Header -->
     <view v-if="pendingMode" class="pending-mode-bar">
@@ -153,6 +154,7 @@ import { getCurrentWorkshop } from '../../../utils/storage';
 import { formatDate, getToday, addDays } from '../../../utils/date';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
+import PreviewBanner from '../../../components/PreviewBanner.vue';
 
 interface Record {
   id: number;

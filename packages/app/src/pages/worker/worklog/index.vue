@@ -1,6 +1,7 @@
 <template>
   <view class="worklog-page">
     <NavBar title="每日记工" />
+    <PreviewBanner />
 
       <!-- Workshop Selector -->
       <view class="workshop-bar" @tap="switchWorkshop">
@@ -83,6 +84,7 @@ import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
+import PreviewBanner from '../../../components/PreviewBanner.vue';
 import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop, setCurrentWorkshop } from '../../../utils/storage';
 import { formatDate, getToday, addDays, isToday } from '../../../utils/date';

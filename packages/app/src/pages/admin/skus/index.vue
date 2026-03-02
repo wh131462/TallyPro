@@ -1,6 +1,7 @@
 <template>
   <view class="skus-page">
     <NavBar title="产品管理" />
+    <PreviewBanner />
 
     <view class="sku-content">
       <view v-if="skus.length === 0" class="empty-state">
@@ -68,6 +69,7 @@ import { onShow } from '@dcloudio/uni-app';
 import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 import NavBar from '../../../components/NavBar.vue';
+import PreviewBanner from '../../../components/PreviewBanner.vue';
 import TabBar from '../../../components/TabBar.vue';
 
 interface Sku {
