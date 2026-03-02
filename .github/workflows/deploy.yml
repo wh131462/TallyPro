@@ -98,6 +98,6 @@ jobs:
 
             # 拉取最新镜像并启动
             cd docker
-            docker compose pull server
-            docker compose up -d
+            docker compose --env-file ../configs/.env.production pull server
+            docker compose --env-file ../configs/.env.production up -d
             docker image prune -f

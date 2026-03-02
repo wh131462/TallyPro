@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS `workshops` (
   `description` VARCHAR(500) NOT NULL DEFAULT '' COMMENT '企业描述',
   `invite_code` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '邀请码',
   `invite_expires_at` DATETIME DEFAULT NULL COMMENT '邀请码过期时间',
+  `logo_url` VARCHAR(500) NOT NULL DEFAULT '' COMMENT '企业Logo',
   `status` ENUM('active','inactive') NOT NULL DEFAULT 'active' COMMENT '企业状态',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
