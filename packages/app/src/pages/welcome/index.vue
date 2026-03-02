@@ -25,27 +25,43 @@
         <image src="/static/icons/wechat.svg" class="wx-icon" />
         <text class="wx-btn-text">微信一键登录</text>
       </button>
-      <text class="welcome-terms">
-        登录即表示同意
-        <text class="terms-link" @tap="goTo('/pages/agreement/index')">《用户协议》</text>
-        和
-        <text class="terms-link" @tap="goTo('/pages/privacy/index')">《隐私政策》</text>
-      </text>
+      <view class="welcome-terms" @tap="toggleAgreed">
+        <view :class="['check-box', { 'check-box--checked': agreed }]">
+          <text v-if="agreed" class="check-icon">&check;</text>
+        </view>
+        <text class="terms-text">
+          我已阅读并同意
+          <text class="terms-link" @tap.stop="goTo('/pages/agreement/index')">《用户协议》</text>
+          和
+          <text class="terms-link" @tap.stop="goTo('/pages/privacy/index')">《隐私政策》</text>
+        </text>
+      </view>
       <text class="version-tag">v1.0.0</text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { api } from '../../utils/request';
 import { setToken } from '../../utils/request';
 import { setUserInfo } from '../../utils/storage';
+
+const agreed = ref(false);
+
+function toggleAgreed() {
+  agreed.value = !agreed.value;
+}
 
 function goTo(path: string) {
   uni.navigateTo({ url: path });
 }
 
 function handleLogin() {
+  if (!agreed.value) {
+    uni.showToast({ title: '请先阅读并同意用户协议和隐私政策', icon: 'none' });
+    return;
+  }
   // #ifdef MP-WEIXIN
   uni.login({
     provider: 'weixin',
@@ -335,12 +351,41 @@ async function mockLogin() {
 }
 
 .welcome-terms {
-  font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: flex-start;
   margin-top: 32rpx;
   letter-spacing: 1rpx;
   line-height: 1.8;
-  text-align: center;
+}
+
+.check-box {
+  width: 32rpx;
+  height: 32rpx;
+  min-width: 32rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 6rpx;
+  margin-right: 12rpx;
+  margin-top: 4rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &--checked {
+    background: rgba(200, 149, 108, 0.8);
+    border-color: rgba(200, 149, 108, 0.8);
+  }
+}
+
+.check-icon {
+  font-size: 22rpx;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+.terms-text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .terms-link {
