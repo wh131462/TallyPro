@@ -139,6 +139,7 @@ router.post('/', async (req: Request, res: Response) => {
             total_amount: totalAmount,
             record_count: records.length,
           },
+          remark: `创建结算单，周期 ${period_start} ~ ${period_end}，金额 ¥${totalAmount}，共 ${records.length} 条记录`,
         },
         { transaction: t }
       );
@@ -150,12 +151,18 @@ router.post('/', async (req: Request, res: Response) => {
     const result = await Settlement.findByPk(settlement.id, {
       include: [
         { model: SettlementItem, as: 'items' },
-        { model: User, as: 'worker', attributes: ['id', 'nickname', 'phone'] },
+        { model: User, as: 'worker', attributes: ['id', 'nickname', 'phone', 'avatar_url'] },
       ],
     });
 
     // Notify worker about new settlement
-    createNotification(Number(worker_id), Number(workshop_id), 'settlement_created', '结算单已生成', `${period_start} ~ ${period_end} 结算单已生成，金额 ¥${settlement.total_amount}，请查看确认`);
+    createNotification(
+      Number(worker_id),
+      Number(workshop_id),
+      'settlement_created',
+      '结算单已生成',
+      `【${workshop.name}】为您生成了 ${period_start} ~ ${period_end} 的结算单，共计 ¥${settlement.total_amount}，请查看确认。`,
+    );
 
     res.json(success(result));
   } catch (error) {
@@ -206,11 +213,22 @@ router.get('/', async (req: Request, res: Response) => {
     const { count, rows } = await Settlement.findAndCountAll({
       where,
       include: [
-        { model: User, as: 'worker', attributes: ['id', 'nickname', 'phone'] },
+        { model: User, as: 'worker', attributes: ['id', 'nickname', 'phone', 'avatar_url'] },
+        { model: SettlementItem, as: 'items', attributes: ['id', 'sku_name'] },
       ],
       order: [['created_at', 'DESC']],
       limit,
       offset,
+    });
+
+    // Append record_count and product_count
+    const list = rows.map((s) => {
+      const json = s.toJSON() as Record<string, unknown>;
+      const items = (json.items as Array<{ sku_name: string }>) || [];
+      json.record_count = items.length;
+      json.product_count = new Set(items.map((i) => i.sku_name)).size;
+      delete json.items;
+      return json;
     });
 
     res.json(
@@ -218,7 +236,7 @@ router.get('/', async (req: Request, res: Response) => {
         total: count,
         page: Number(page),
         page_size: limit,
-        list: rows,
+        list,
       })
     );
   } catch (error) {
@@ -236,7 +254,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const settlement = await Settlement.findByPk(Number(req.params.id), {
       include: [
         { model: SettlementItem, as: 'items' },
-        { model: User, as: 'worker', attributes: ['id', 'nickname', 'phone'] },
+        { model: User, as: 'worker', attributes: ['id', 'nickname', 'phone', 'avatar_url'] },
         { model: Workshop, as: 'workshop', attributes: ['id', 'name'] },
       ],
     });
@@ -316,7 +334,13 @@ router.put('/:id/confirm', async (req: Request, res: Response) => {
     });
 
     // Notify worker about settlement confirmation
-    createNotification(settlement.worker_id, settlement.workshop_id, 'settlement_confirmed', '结算已确认', `您的结算单已确认，金额 ¥${settlement.total_amount}`);
+    createNotification(
+      settlement.worker_id,
+      settlement.workshop_id,
+      'settlement_confirmed',
+      '结算已确认',
+      `【${workshop.name}】已确认您 ${settlement.period_start} ~ ${settlement.period_end} 的结算单，金额 ¥${settlement.total_amount}。`,
+    );
 
     res.json(success({ message: '结算单已确认' }));
   } catch (error) {
