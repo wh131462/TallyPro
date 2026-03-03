@@ -18,7 +18,8 @@
         </view>
         <view class="worker-info">
           <text class="worker-name">{{ w.name }}</text>
-          <text class="worker-phone">{{ maskPhone(w.phone) }}</text>
+          <text class="worker-settle-count" v-if="w.settleableCount > 0">{{ w.settleableCount }} 条可结算</text>
+          <text class="worker-settle-count" v-else>暂无可结算记录</text>
         </view>
         <view class="radio-dot" :class="{ checked: selectedWorkerId === w.userId }"></view>
       </view>
@@ -67,6 +68,7 @@ interface WorkerOption {
   name: string;
   phone: string;
   color: string;
+  settleableCount: number;
 }
 
 const workshop = getCurrentWorkshop();
@@ -103,8 +105,19 @@ function onEndChange(e: any) {
 async function loadWorkers() {
   if (!workshop || !workshop.id) return;
   try {
-    const res = await api.get<any>(`/workshops/${workshop.id}/members`);
-    const list = res.data || [];
+    const [membersRes, recordsRes] = await Promise.all([
+      api.get<any>(`/workshops/${workshop.id}/members`),
+      api.get<any>(`/records?workshop_id=${workshop.id}&status=confirmed&page_size=9999`),
+    ]);
+    const list = membersRes.data || [];
+    // 统计每个员工的可结算记录数（confirmed/modified 且未关联结算单）
+    const records = recordsRes.data?.list || recordsRes.data || [];
+    const countMap: { [key: number]: number } = {};
+    (Array.isArray(records) ? records : []).forEach((r: any) => {
+      if ((r.status === 'confirmed' || r.status === 'modified') && !r.settlement_id) {
+        countMap[r.worker_id] = (countMap[r.worker_id] || 0) + 1;
+      }
+    });
     workers.value = (Array.isArray(list) ? list : [])
       .filter((m: any) => m.status === 'approved' && m.user)
       .map((m: any, i: number) => ({
@@ -112,6 +125,7 @@ async function loadWorkers() {
         name: m.display_name || m.user.nickname || '未命名',
         phone: m.user.phone || '',
         color: avatarColors[i % avatarColors.length],
+        settleableCount: countMap[m.user.id] || 0,
       }));
   } catch (e) {
     console.error('加载员工列表失败', e);
@@ -214,7 +228,7 @@ onMounted(loadWorkers);
   color: $ink;
 }
 
-.worker-phone {
+.worker-settle-count {
   display: block;
   font-size: 24rpx;
   color: $ink-faint;

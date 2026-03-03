@@ -64,8 +64,8 @@
             </view>
             <text v-if="record.workDate" class="record-date-text">{{ formatWorkDate(record.workDate) }}</text>
           </view>
-          <view class="record-status" :class="record.status === 'pending' ? 'rs-pending' : 'rs-confirmed'">
-            <text class="record-status-text">{{ record.status === 'pending' ? '待确认' : '已确认' }}</text>
+          <view class="record-status" :class="'rs-' + record.status">
+            <text class="record-status-text">{{ statusLabel(record.status) }}</text>
           </view>
         </view>
 
@@ -169,7 +169,7 @@ interface Record {
   price: number;
   quantity: number;
   totalAmount: number;
-  status: 'pending' | 'confirmed';
+  status: 'pending' | 'confirmed' | 'modified' | 'settled';
   workDate: string;
 }
 
@@ -187,6 +187,7 @@ const tabs = [
   { key: 'all', label: '全部' },
   { key: 'pending', label: '待确认' },
   { key: 'confirmed', label: '已确认' },
+  { key: 'settled', label: '已结算' },
 ];
 
 const displayDate = computed(() => {
@@ -209,6 +210,16 @@ const filteredRecords = computed(() => {
 const pendingCount = computed(() =>
   records.value.filter(r => r.status === 'pending').length,
 );
+
+function statusLabel(status: string): string {
+  const map: { [key: string]: string } = {
+    pending: '待确认',
+    confirmed: '已确认',
+    modified: '已修改',
+    settled: '已结算',
+  };
+  return map[status] || '待确认';
+}
 
 function formatWorkDate(dateStr: string): string {
   if (!dateStr) return '';
@@ -333,7 +344,7 @@ async function loadRecords() {
         price: Number(r.unit_price || step.unit_price) || 0,
         quantity: r.confirmed_quantity ?? r.quantity ?? 0,
         totalAmount: (r.confirmed_quantity ?? r.quantity ?? 0) * Number(r.unit_price || step.unit_price || 0),
-        status: r.status === 'confirmed' || r.status === 'modified' ? 'confirmed' : 'pending',
+        status: r.status || 'pending',
         workDate: r.work_date || '',
       };
     });
@@ -559,6 +570,22 @@ onMounted(() => {
 
 .rs-confirmed .record-status-text {
   color: $sage;
+}
+
+.rs-modified {
+  background: $sky-light;
+}
+
+.rs-modified .record-status-text {
+  color: $sky;
+}
+
+.rs-settled {
+  background: $plum-light;
+}
+
+.rs-settled .record-status-text {
+  color: $plum;
 }
 
 .record-status-text {

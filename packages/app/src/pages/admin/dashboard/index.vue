@@ -110,7 +110,7 @@ import NavBar from '../../../components/NavBar.vue';
 import TabBar from '../../../components/TabBar.vue';
 import PreviewBanner from '../../../components/PreviewBanner.vue';
 import { api, getImageUrl } from '../../../utils/request';
-import { getCurrentWorkshop, getUserInfo } from '../../../utils/storage';
+import { getCurrentWorkshop, setCurrentWorkshop, getUserInfo } from '../../../utils/storage';
 import { requireLogin } from '../../../utils/auth';
 import { getShareConfig } from '../../../utils/share';
 
@@ -153,13 +153,31 @@ function goTo(path: string) {
   }
 }
 
-onShow(() => {
+onShow(async () => {
   userName.value = getUserInfo()?.nickname || '老板';
   // 刷新 workshop 数据（用户可能在设置页更新了名称或 Logo）
   const ws = getCurrentWorkshop();
   if (ws) {
     workshopDisplayName.value = ws.name || '我的企业';
     workshopLogo.value = ws.logo_url || '';
+    // 从 API 拉取最新企业数据，确保头像等信息同步
+    if (ws.id) {
+      try {
+        const res = await api.get<any>(`/workshops/${ws.id}`);
+        if (res.data) {
+          workshopDisplayName.value = res.data.name || ws.name;
+          workshopLogo.value = res.data.logo_url || '';
+          setCurrentWorkshop({
+            id: ws.id,
+            name: res.data.name || ws.name,
+            role: ws.role,
+            logo_url: res.data.logo_url || '',
+          });
+        }
+      } catch {
+        // 网络异常时使用缓存数据
+      }
+    }
   }
 });
 
@@ -195,6 +213,9 @@ onMounted(async () => {
         reject_member: '#C75B5B',
         remove_member: '#C75B5B',
         change_price: '#D4845A',
+        create_settlement: '#8B6B96',
+        confirm_settlement: '#6B9B7B',
+        export: '#5B8DB8',
       };
       const actionLabel: Record<string, string> = {
         confirm_record: '确认了一条记工记录',
@@ -204,6 +225,9 @@ onMounted(async () => {
         reject_member: '拒绝了员工申请',
         remove_member: '移除了一名员工',
         change_price: '调整了工序单价',
+        create_settlement: '创建了结算单',
+        confirm_settlement: '确认了结算单',
+        export: '导出了报表',
       };
       activities.value = logRes.data.list.map((log: any) => ({
         text: log.remark || actionLabel[log.action] || log.action,
