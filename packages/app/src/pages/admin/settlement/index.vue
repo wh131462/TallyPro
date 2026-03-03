@@ -342,5 +342,6 @@ onShow(loadSettlements);
 .create-icon {
   width: 32rpx;
   height: 32rpx;
+  filter: brightness(0) invert(1);
 }
 </style>

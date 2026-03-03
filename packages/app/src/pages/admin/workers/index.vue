@@ -43,8 +43,6 @@
             </view>
           </view>
           <view class="worker-meta">
-            <text class="meta-item">{{ maskPhone(worker.phone) }}</text>
-            <text class="meta-divider">|</text>
             <text class="meta-item">{{ worker.recordCount }} 条记录</text>
           </view>
         </view>
