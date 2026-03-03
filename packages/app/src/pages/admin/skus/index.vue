@@ -48,18 +48,16 @@
     <!-- Bottom spacer: TabBar + bottom-bar -->
     <view class="tab-bar-clearance-with-bar"></view>
 
-    <!-- Add SKU Button — 固定在 TabBar 上方 -->
-    <view class="bottom-fixed">
-      <view class="bottom-bar">
-        <button class="btn-add" @tap="addSku">
-          <image src="/static/icons/plus.svg" class="btn-add-icon" />
-          <text class="btn-add-text">添加产品</text>
-        </button>
-      </view>
-      <view class="tab-bar-placeholder"></view>
-    </view>
-
-    <TabBar role="admin" current="/pages/admin/skus/index" />
+    <TabBar role="admin" current="/pages/admin/skus/index">
+      <template #top>
+        <view class="bottom-bar">
+          <button class="btn-add" @tap="addSku">
+            <image src="/static/icons/plus.svg" class="btn-add-icon" />
+            <text class="btn-add-text">添加产品</text>
+          </button>
+        </view>
+      </template>
+    </TabBar>
   </view>
 </template>
 

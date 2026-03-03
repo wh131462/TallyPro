@@ -9,6 +9,9 @@
           <view class="dash-logo" v-if="workshopLogo">
             <image :src="getImageUrl(workshopLogo)" class="dash-logo-img" mode="aspectFill" />
           </view>
+          <view class="dash-logo dash-logo-default" v-else>
+            <image src="/static/icons/factory.svg" class="dash-logo-icon" />
+          </view>
           <view class="dash-header-text">
             <text class="greeting">{{ greetingText }}，{{ userName??"用户" }}</text>
             <text class="workshop-name">{{ workshopDisplayName }}</text>
@@ -152,6 +155,12 @@ function goTo(path: string) {
 
 onShow(() => {
   userName.value = getUserInfo()?.nickname || '老板';
+  // 刷新 workshop 数据（用户可能在设置页更新了名称或 Logo）
+  const ws = getCurrentWorkshop();
+  if (ws) {
+    workshopDisplayName.value = ws.name || '我的企业';
+    workshopLogo.value = ws.logo_url || '';
+  }
 });
 
 onMounted(async () => {
@@ -243,6 +252,19 @@ onMounted(async () => {
 .dash-logo-img {
   width: 96rpx;
   height: 96rpx;
+}
+
+.dash-logo-default {
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dash-logo-icon {
+  width: 48rpx;
+  height: 48rpx;
+  opacity: 0.6;
 }
 
 .dash-header-text {

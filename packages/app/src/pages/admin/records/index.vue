@@ -103,16 +103,16 @@
     <!-- Bottom spacer -->
     <view :class="pendingCount > 0 ? 'tab-bar-clearance-with-bar' : 'tab-bar-clearance'"></view>
 
-    <!-- Batch Confirm Button — 固定在 TabBar 上方 -->
-    <view v-if="pendingCount > 0" class="bottom-fixed">
-      <view class="bottom-bar">
-        <button class="btn-batch" @tap="batchConfirm">
-          <image src="/static/icons/check.svg" class="btn-batch-icon" />
-          <text class="btn-batch-text">批量确认全部待审核（{{ pendingCount }}条）</text>
-        </button>
-      </view>
-      <view class="tab-bar-placeholder"></view>
-    </view>
+    <TabBar role="admin" current="/pages/admin/records/index">
+      <template #top>
+        <view v-if="pendingCount > 0" class="bottom-bar">
+          <button class="btn-batch" @tap="batchConfirm">
+            <image src="/static/icons/check.svg" class="btn-batch-icon" />
+            <text class="btn-batch-text">批量确认全部待审核（{{ pendingCount }}条）</text>
+          </button>
+        </view>
+      </template>
+    </TabBar>
 
     <!-- Modify Modal -->
     <view v-if="showModifyModal" class="modal-mask" @tap="showModifyModal = false">
@@ -143,7 +143,6 @@
       </view>
     </view>
 
-    <TabBar role="admin" current="/pages/admin/records/index" />
   </view>
 </template>
 

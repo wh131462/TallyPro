@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { api } from '../../../utils/request';
-import { getCurrentWorkshop } from '../../../utils/storage';
+import { getCurrentWorkshop, setCurrentWorkshop } from '../../../utils/storage';
 import { chooseAndUploadImage, getImageUrl } from '../../../utils/request';
 import QRCode from '../../../components/QRCode.vue';
 
@@ -102,6 +102,13 @@ async function saveWorkshop() {
   if (!workshop || !workshop.id) return;
   try {
     await api.put(`/workshops/${workshop.id}`, form.value as any);
+    // 同步更新本地缓存，确保其他页面能读到最新数据
+    setCurrentWorkshop({
+      id: workshop.id,
+      name: form.value.name,
+      role: workshop.role,
+      logo_url: form.value.logo_url,
+    });
     uni.showToast({ title: '保存成功', icon: 'success' });
   } catch (e) {
     console.error(e);

@@ -5,7 +5,8 @@
 
       <!-- Workshop Name -->
       <view class="workshop-bar" v-if="workshopName">
-        <image src="/static/icons/factory.svg" class="ws-bar-icon" />
+        <image v-if="workshopLogo" :src="getImageUrl(workshopLogo)" class="ws-bar-logo" mode="aspectFill" />
+        <image v-else src="/static/icons/factory.svg" class="ws-bar-icon" />
         <text class="ws-bar-name">{{ workshopName }}</text>
       </view>
 
@@ -69,8 +70,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
+import { ref, computed } from 'vue';
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import NavBar from '../../../components/NavBar.vue';
 import PreviewBanner from '../../../components/PreviewBanner.vue';
 import TabBar from '../../../components/TabBar.vue';
@@ -109,6 +110,7 @@ const filterTabs = [
 const activeFilter = ref('all');
 const records = ref<RecordItem[]>([]);
 const workshopName = ref('');
+const workshopLogo = ref('');
 
 const filteredRecords = computed(() => {
   if (activeFilter.value === 'all') return records.value;
@@ -152,10 +154,11 @@ function getStatusLabel(status: string): string {
   return map[status] || '待确认';
 }
 
-onMounted(async () => {
+onShow(async () => {
   const workshop = getCurrentWorkshop();
   if (!workshop || !workshop.id) return;
   workshopName.value = workshop.name;
+  workshopLogo.value = workshop.logo_url || '';
   try {
     const res = await api.get<any>(`/records?workshop_id=${workshop.id}&page_size=100`);
     const list = res.data?.list || res.data || [];
@@ -201,6 +204,12 @@ onMounted(async () => {
 .ws-bar-icon {
   width: 36rpx;
   height: 36rpx;
+}
+
+.ws-bar-logo {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
 }
 
 .ws-bar-name {

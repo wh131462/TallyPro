@@ -29,7 +29,10 @@
         class="worker-card"
         @tap="onWorkerTap(worker)"
       >
-        <view class="worker-avatar" :style="{ background: worker.avatarColor }">
+        <view v-if="worker.avatarUrl" class="worker-avatar">
+          <image :src="getImageUrl(worker.avatarUrl)" class="worker-avatar-img" mode="aspectFill" />
+        </view>
+        <view v-else class="worker-avatar" :style="{ background: worker.avatarColor }">
           <text class="avatar-text">{{ worker.name.charAt(0) }}</text>
         </view>
         <view class="worker-info">
@@ -92,7 +95,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { api } from '../../../utils/request';
+import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 import QRCode from '../../../components/QRCode.vue';
 
@@ -103,6 +106,7 @@ interface Worker {
   status: 'active' | 'pending' | 'removed';
   recordCount: number;
   avatarColor: string;
+  avatarUrl: string;
 }
 
 const workshop = getCurrentWorkshop();
@@ -230,6 +234,7 @@ async function loadWorkers() {
       status: m.status === 'approved' ? 'active' : m.status === 'removed' ? 'removed' : 'pending',
       recordCount: m.record_count || 0,
       avatarColor: getAvatarColor(i),
+      avatarUrl: m.user?.avatar_url || '',
     }));
   } catch (e) {
     console.error('加载员工列表失败', e);
@@ -329,6 +334,12 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.worker-avatar-img {
+  width: 88rpx;
+  height: 88rpx;
 }
 
 .avatar-text {

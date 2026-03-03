@@ -2,7 +2,31 @@
 import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
 
 onLaunch(() => {
-  console.log("App Launch");
+  // 小程序自动更新检测
+  const updateManager = uni.getUpdateManager();
+  updateManager.onCheckForUpdate((res) => {
+    if (res.hasUpdate) {
+      console.log("检测到新版本");
+    }
+  });
+  updateManager.onUpdateReady(() => {
+    uni.showModal({
+      title: "更新提示",
+      content: "新版本已准备好，是否重启应用？",
+      success(res) {
+        if (res.confirm) {
+          updateManager.applyUpdate();
+        }
+      },
+    });
+  });
+  updateManager.onUpdateFailed(() => {
+    uni.showModal({
+      title: "更新提示",
+      content: "新版本下载失败，请删除小程序后重新搜索打开",
+      showCancel: false,
+    });
+  });
 });
 onShow(() => {
   console.log("App Show");
@@ -196,29 +220,19 @@ page {
 
 /* Safe area for custom tab bar */
 .safe-bottom {
+  padding-bottom: calc(160rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
 /* TabBar 高度占位 —— 用于仅有 TabBar 的页面底部 */
 .tab-bar-clearance {
+  height: calc(160rpx + constant(safe-area-inset-bottom));
   height: calc(160rpx + env(safe-area-inset-bottom));
 }
 
 /* TabBar 高度占位 + 底部操作栏 —— 用于有底部按钮 + TabBar 的页面 */
 .tab-bar-clearance-with-bar {
-  height: calc(160rpx + env(safe-area-inset-bottom) + 140rpx);
-}
-
-/* 固定在 TabBar 上方的容器（底部按钮等） */
-.bottom-fixed {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  left: 0;
-}
-
-/* bottom-fixed 内部的 TabBar 占位，把内容推到 TabBar 上方 */
-.tab-bar-placeholder {
-  height: calc(160rpx + env(safe-area-inset-bottom));
+  height: calc(300rpx + constant(safe-area-inset-bottom));
+  height: calc(300rpx + env(safe-area-inset-bottom));
 }
 </style>

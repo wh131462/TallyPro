@@ -36,7 +36,10 @@
 
           <view class="sc-body">
             <view class="sc-worker">
-              <view class="sc-avatar">
+              <view v-if="item.worker_avatar" class="sc-avatar">
+                <image :src="getImageUrl(item.worker_avatar)" class="sc-avatar-img" mode="aspectFill" />
+              </view>
+              <view v-else class="sc-avatar">
                 <image src="/static/icons/profile.svg" class="sc-avatar-icon" />
               </view>
               <text class="sc-worker-name">{{ item.worker_name }}</text>
@@ -75,12 +78,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { api } from '../../../utils/request';
+import { api, getImageUrl } from '../../../utils/request';
 import { getCurrentWorkshop } from '../../../utils/storage';
 
 interface Settlement {
   id: number;
   worker_name: string;
+  worker_avatar: string;
   start_date: string;
   end_date: string;
   total_amount: string;
@@ -115,6 +119,7 @@ async function loadSettlements() {
       settlements.value = (Array.isArray(list) ? list : []).map((s: any) => ({
         id: s.id,
         worker_name: s.worker?.nickname || '未知员工',
+        worker_avatar: s.worker?.avatar_url || '',
         start_date: s.period_start || '',
         end_date: s.period_end || '',
         total_amount: s.total_amount || '0.00',
@@ -247,6 +252,12 @@ onShow(loadSettlements);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.sc-avatar-img {
+  width: 72rpx;
+  height: 72rpx;
 }
 
 .sc-avatar-icon {

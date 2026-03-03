@@ -100,7 +100,7 @@ function formatLogTime(dateStr: string): string {
 
 function mapLogType(type: string): LogItem['type'] {
   if (['confirm', 'modify', 'reject', 'review'].includes(type)) return 'audit';
-  if (['create_settlement', 'export'].includes(type)) return 'settlement';
+  if (['create_settlement', 'confirm_settlement', 'export'].includes(type)) return 'settlement';
   if (['approve', 'invite', 'remove'].includes(type)) return 'member';
   return 'audit';
 }
@@ -111,6 +111,7 @@ function mapLogIcon(type: string): { icon: string; iconBg: string; action: strin
     modify: { icon: '\u270E', iconBg: 'rgba(91,141,184,0.12)', action: '修改数量' },
     reject: { icon: '\u2717', iconBg: 'rgba(199,91,91,0.12)', action: '驳回记录' },
     create_settlement: { icon: '\uD83D\uDCB0', iconBg: 'rgba(200,149,108,0.12)', action: '创建结算单' },
+    confirm_settlement: { icon: '\uD83D\uDCB0', iconBg: 'rgba(107,155,123,0.12)', action: '确认结算' },
     approve: { icon: '\uD83D\uDC64', iconBg: 'rgba(139,107,150,0.12)', action: '审批通过' },
     invite: { icon: '\uD83D\uDC65', iconBg: 'rgba(91,141,184,0.12)', action: '邀请成员' },
     remove: { icon: '\uD83D\uDEAB', iconBg: 'rgba(199,91,91,0.12)', action: '移除成员' },

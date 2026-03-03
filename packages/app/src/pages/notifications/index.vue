@@ -35,6 +35,11 @@
               <text class="ni-desc">{{ item.content }}</text>
               <text class="ni-time">{{ formatTime(item.created_at) }}</text>
             </view>
+            <text
+              v-if="typeRouteMap[item.type]"
+              class="ni-arrow"
+              @tap.stop="navigateTo(item)"
+            >&#x203A;</text>
           </view>
         </view>
       </view>
@@ -181,6 +186,38 @@ async function markRead(item: NotificationItem) {
   }
 }
 
+/** 通知类型 → 跳转页面 */
+const typeRouteMap: Record<string, string> = {
+  settlement_created: '/pages/admin/settlement/index',
+  settlement_confirmed: '/pages/admin/settlement/index',
+  record_submitted: '/pages/admin/records/index',
+  record_confirmed: '/pages/worker/history/index',
+  record_modified: '/pages/worker/history/index',
+  member_apply: '/pages/admin/workers/index',
+  member_approved: '/pages/role-select/index',
+  member_rejected: '/pages/role-select/index',
+  member_removed: '/pages/role-select/index',
+};
+
+async function onTapNotification(item: NotificationItem) {
+  if (!item.is_read) {
+    markRead(item);
+  }
+}
+
+function navigateTo(item: NotificationItem) {
+  if (!item.is_read) {
+    markRead(item);
+  }
+  const route = typeRouteMap[item.type];
+  if (route) {
+    uni.navigateTo({
+      url: route,
+      fail: () => uni.redirectTo({ url: route }),
+    });
+  }
+}
+
 async function markAllRead() {
   try {
     await api.put('/notifications/read-all');
@@ -299,6 +336,16 @@ onShow(() => {
   display: block;
   font-size: 22rpx;
   color: $ink-faint;
+}
+
+.ni-arrow {
+  font-size: 36rpx;
+  color: $ink-faint;
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 8rpx 0 16rpx;
 }
 
 // Loading

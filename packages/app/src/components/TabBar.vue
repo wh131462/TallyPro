@@ -1,15 +1,18 @@
 <template>
   <view class="tab-bar">
-    <view
-      v-for="(item, index) in tabs"
-      :key="index"
-      class="tab-item"
-      :class="{ active: currentIndex === index }"
-      @tap="switchTab(index)"
-    >
-      <view class="tab-indicator" v-if="currentIndex === index"></view>
-      <image class="tab-icon" :src="currentIndex === index ? item.activeIcon : item.icon" mode="aspectFit" />
-      <text class="tab-label">{{ item.label }}</text>
+    <slot name="top"></slot>
+    <view class="tab-bar-nav">
+      <view
+        v-for="(item, index) in tabs"
+        :key="index"
+        class="tab-item"
+        :class="{ active: currentIndex === index }"
+        @tap="switchTab(index)"
+      >
+        <view class="tab-indicator" v-if="currentIndex === index"></view>
+        <image class="tab-icon" :src="currentIndex === index ? item.activeIcon : item.icon" mode="aspectFit" />
+        <text class="tab-label">{{ item.label }}</text>
+      </view>
     </view>
   </view>
 </template>
@@ -64,12 +67,16 @@ function switchTab(index: number) {
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(88rpx + env(safe-area-inset-bottom));
+  padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
   background: $surface;
+  z-index: 999;
+}
+
+.tab-bar-nav {
+  height: 88rpx;
   display: flex;
   border-top: 1rpx solid $cream-deep;
-  z-index: 999;
 }
 
 .tab-item {

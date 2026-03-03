@@ -5,7 +5,10 @@
       <view class="amount-box">
         <view class="ab-header">
           <view class="ab-worker">
-            <view class="ab-avatar">
+            <view v-if="detail.worker_avatar" class="ab-avatar">
+              <image :src="getImageUrl(detail.worker_avatar)" class="ab-avatar-img" mode="aspectFill" />
+            </view>
+            <view v-else class="ab-avatar">
               <image src="/static/icons/profile.svg" class="ab-avatar-icon" />
             </view>
             <view class="ab-info">
@@ -54,19 +57,37 @@
       <view style="height: 160rpx;"></view>
     </scroll-view>
 
-    <!-- Export Button -->
+    <!-- Bottom Actions -->
     <view class="bottom-bar">
-      <button class="btn-primary export-btn" @tap="exportReport">
-        <image src="/static/icons/export.svg" class="export-icon" />
-        <text>导出报表</text>
-      </button>
+      <view class="bottom-bar-inner">
+        <button
+          v-if="detail.status === 'draft'"
+          class="btn-confirm"
+          :disabled="confirming"
+          @tap="confirmSettlement"
+        >
+          {{ confirming ? '确认中...' : '确认结算' }}
+        </button>
+        <button class="btn-primary export-btn" :disabled="exporting" @tap="exportReport">
+          <image src="/static/icons/export.svg" class="export-icon" />
+          <text>{{ exporting ? '生成中...' : '导出报表' }}</text>
+        </button>
+      </view>
     </view>
+
+    <!-- Hidden canvas for export -->
+    <canvas
+      canvas-id="settlementCanvas"
+      :style="{ position: 'fixed', left: '-9999px', top: '0', width: canvasW + 'px', height: canvasH + 'px' }"
+    ></canvas>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { api } from '../../../utils/request';
+import { ref, nextTick, onMounted, getCurrentInstance } from 'vue';
+import { api, getImageUrl } from '../../../utils/request';
+
+const instance = getCurrentInstance();
 
 interface SectionItem {
   step_name: string;
@@ -84,6 +105,7 @@ interface ProductSection {
 interface SettlementDetail {
   id: number;
   worker_name: string;
+  worker_avatar: string;
   start_date: string;
   end_date: string;
   total_amount: string;
@@ -92,11 +114,16 @@ interface SettlementDetail {
 }
 
 const loading = ref(true);
+const exporting = ref(false);
+const confirming = ref(false);
 const settlementId = ref<number>(0);
+const canvasW = ref(600);
+const canvasH = ref(800);
 
 const detail = ref<SettlementDetail>({
   id: 0,
   worker_name: '',
+  worker_avatar: '',
   start_date: '',
   end_date: '',
   total_amount: '0.00',
@@ -104,8 +131,242 @@ const detail = ref<SettlementDetail>({
   sections: [],
 });
 
-function exportReport() {
-  uni.showToast({ title: '导出功能开发中', icon: 'none' });
+function confirmSettlement() {
+  uni.showModal({
+    title: '确认结算',
+    content: `确认该结算单（¥${detail.value.total_amount}）？确认后关联的工作记录将标记为已结算。`,
+    success: async (res) => {
+      if (!res.confirm) return;
+      confirming.value = true;
+      try {
+        await api.put(`/settlements/${settlementId.value}/confirm`);
+        detail.value.status = 'confirmed';
+        uni.showToast({ title: '已确认', icon: 'success' });
+      } catch (e) {
+        console.error('确认结算失败', e);
+      } finally {
+        confirming.value = false;
+      }
+    },
+  });
+}
+
+async function exportReport() {
+  const d = detail.value;
+  if (!d.sections.length) {
+    uni.showToast({ title: '暂无结算明细', icon: 'none' });
+    return;
+  }
+  if (exporting.value) return;
+  exporting.value = true;
+  uni.showLoading({ title: '生成中...' });
+
+  try {
+    // --- Calculate canvas height ---
+    const W = 600;
+    const PAD = 40;
+    const HEADER_H = 120;
+    const INFO_H = 130;
+    const DIVIDER_GAP = 24;
+    const SECTION_HEADER_H = 44;
+    const ITEM_H = 36;
+    const SECTION_GAP = 16;
+    const TOTAL_H = 100;
+    const FOOTER_H = 50;
+
+    let sectionsH = 0;
+    for (const s of d.sections) {
+      sectionsH += SECTION_HEADER_H + s.items.length * ITEM_H + SECTION_GAP;
+    }
+
+    const H = HEADER_H + INFO_H + DIVIDER_GAP + sectionsH + DIVIDER_GAP + TOTAL_H + FOOTER_H + PAD;
+    canvasW.value = W;
+    canvasH.value = H;
+
+    await nextTick();
+    await new Promise((r) => setTimeout(r, 150));
+
+    const ctx = uni.createCanvasContext('settlementCanvas', instance?.proxy);
+
+    // --- Background ---
+    ctx.setFillStyle('#FAF8F4');
+    ctx.fillRect(0, 0, W, H);
+
+    // --- Dark header ---
+    ctx.setFillStyle('#1E1E2A');
+    ctx.fillRect(0, 0, W, HEADER_H);
+
+    ctx.setTextAlign('center');
+    ctx.setFillStyle('#FFFFFF');
+    ctx.setFontSize(28);
+    ctx.fillText('结 算 单', W / 2, 55);
+    ctx.setFontSize(12);
+    ctx.setFillStyle('rgba(255,255,255,0.4)');
+    ctx.fillText('SETTLEMENT REPORT', W / 2, 82);
+
+    // Amber accent line
+    ctx.setFillStyle('#C8956C');
+    ctx.fillRect(W / 2 - 30, 96, 60, 3);
+
+    let y = HEADER_H + 24;
+
+    // --- Info section ---
+    const infoX = PAD;
+    const valX = PAD + 56;
+
+    ctx.setTextAlign('left');
+    ctx.setFontSize(13);
+    ctx.setFillStyle('#A0A0B0');
+    ctx.fillText('员工', infoX, y);
+    ctx.setFillStyle('#1E1E2A');
+    ctx.setFontSize(14);
+    ctx.fillText(d.worker_name, valX, y);
+
+    y += 34;
+    ctx.setFontSize(13);
+    ctx.setFillStyle('#A0A0B0');
+    ctx.fillText('周期', infoX, y);
+    ctx.setFillStyle('#1E1E2A');
+    ctx.setFontSize(14);
+    ctx.fillText(`${d.start_date} ~ ${d.end_date}`, valX, y);
+
+    y += 34;
+    ctx.setFontSize(13);
+    ctx.setFillStyle('#A0A0B0');
+    ctx.fillText('状态', infoX, y);
+    const statusText = d.status === 'confirmed' ? '已确认' : '草稿';
+    const statusColor = d.status === 'confirmed' ? '#6B9B7B' : '#C8956C';
+    ctx.setFillStyle(statusColor);
+    ctx.setFontSize(14);
+    ctx.fillText(statusText, valX, y);
+
+    y += 38;
+
+    // --- Divider ---
+    ctx.setStrokeStyle('#EDE6DA');
+    ctx.setLineWidth(1);
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W - PAD, y);
+    ctx.stroke();
+    y += DIVIDER_GAP;
+
+    // --- Product sections ---
+    for (const section of d.sections) {
+      // Section header with amber bar
+      ctx.setFillStyle('#C8956C');
+      ctx.fillRect(PAD, y + 2, 4, 18);
+
+      ctx.setTextAlign('left');
+      ctx.setFillStyle('#1E1E2A');
+      ctx.setFontSize(15);
+      ctx.fillText(section.product_name, PAD + 14, y + 16);
+
+      ctx.setTextAlign('right');
+      ctx.setFillStyle('#C8956C');
+      ctx.setFontSize(15);
+      ctx.fillText(`¥${section.subtotal}`, W - PAD, y + 16);
+
+      y += SECTION_HEADER_H;
+
+      // Items
+      for (const item of section.items) {
+        ctx.setTextAlign('left');
+        ctx.setFillStyle('#6E6E80');
+        ctx.setFontSize(12);
+        ctx.fillText(item.step_name, PAD + 14, y + 14);
+
+        ctx.setFillStyle('#A0A0B0');
+        ctx.setFontSize(12);
+        ctx.fillText(`¥${item.price} × ${item.quantity}`, PAD + 200, y + 14);
+
+        ctx.setTextAlign('right');
+        ctx.setFillStyle('#3A3A4A');
+        ctx.setFontSize(13);
+        ctx.fillText(`¥${item.amount}`, W - PAD, y + 14);
+
+        y += ITEM_H;
+      }
+
+      y += SECTION_GAP;
+    }
+
+    // --- Divider ---
+    ctx.setStrokeStyle('#EDE6DA');
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W - PAD, y);
+    ctx.stroke();
+    y += DIVIDER_GAP;
+
+    // --- Total ---
+    ctx.setTextAlign('center');
+    ctx.setFillStyle('#A0A0B0');
+    ctx.setFontSize(13);
+    ctx.fillText('结算总额', W / 2, y + 12);
+
+    ctx.setFillStyle('#C8956C');
+    ctx.setFontSize(36);
+    ctx.fillText(`¥${d.total_amount}`, W / 2, y + 56);
+
+    y += TOTAL_H;
+
+    // --- Footer ---
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    ctx.setFillStyle('#A0A0B0');
+    ctx.setFontSize(11);
+    ctx.fillText(`${dateStr}  ·  计工宝`, W / 2, H - 20);
+
+    // --- Draw & save ---
+    ctx.draw(false, () => {
+      setTimeout(() => {
+        uni.canvasToTempFilePath(
+          {
+            canvasId: 'settlementCanvas',
+            destWidth: W * 2,
+            destHeight: H * 2,
+            success: (res) => {
+              uni.hideLoading();
+              uni.saveImageToPhotosAlbum({
+                filePath: res.tempFilePath,
+                success: () => {
+                  uni.showToast({ title: '已保存到相册', icon: 'success' });
+                },
+                fail: (err) => {
+                  if (
+                    err.errMsg?.includes('auth deny') ||
+                    err.errMsg?.includes('authorize')
+                  ) {
+                    uni.showModal({
+                      title: '提示',
+                      content: '需要您授权保存图片到相册',
+                      success: (r) => {
+                        if (r.confirm) uni.openSetting({});
+                      },
+                    });
+                  } else {
+                    uni.showToast({ title: '保存失败', icon: 'none' });
+                  }
+                },
+              });
+            },
+            fail: () => {
+              uni.hideLoading();
+              uni.showToast({ title: '生成图片失败', icon: 'none' });
+            },
+          },
+          instance?.proxy,
+        );
+      }, 300);
+    });
+  } catch (e) {
+    uni.hideLoading();
+    console.error('导出失败', e);
+    uni.showToast({ title: '导出失败', icon: 'none' });
+  } finally {
+    exporting.value = false;
+  }
 }
 
 onMounted(async () => {
@@ -154,6 +415,7 @@ onMounted(async () => {
       detail.value = {
         id: d.id,
         worker_name: worker.nickname || '未知员工',
+        worker_avatar: worker.avatar_url || '',
         start_date: d.period_start || '',
         end_date: d.period_end || '',
         total_amount: d.total_amount || '0.00',
@@ -212,6 +474,12 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.ab-avatar-img {
+  width: 80rpx;
+  height: 80rpx;
 }
 
 .ab-avatar-icon {
@@ -365,7 +633,32 @@ onMounted(async () => {
   background: linear-gradient(to top, $cream 60%, transparent);
 }
 
+.bottom-bar-inner {
+  display: flex;
+  gap: 16rpx;
+}
+
+.btn-confirm {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: $radius-sm;
+  font-size: 28rpx;
+  font-weight: 600;
+  background: $sage;
+  color: #fff;
+  border: none;
+  white-space: nowrap;
+
+  &::after {
+    display: none;
+  }
+}
+
 .export-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
